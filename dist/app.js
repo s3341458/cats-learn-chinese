@@ -486,7 +486,7 @@ function showFinish() {
   const route = volumes[lesson.volume];
   const next = lessons[run.index + 1];
   const endOfVolume = last || next.volume !== lesson.volume;
-  const title = last ? '喵喵识字镇毕业啦！' :
+  const title = last ? '猫猫学中文毕业啦！' :
     endOfVolume ? `${route.title}读完啦！` : `${lesson.name}探险完成！`;
   const read = `今天认识了「${lesson.words[0].han}」和「${lesson.words[1].han}」。`;
   let note = '';

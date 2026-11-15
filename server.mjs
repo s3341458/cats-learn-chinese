@@ -34,4 +34,4 @@ createServer(async (req, res) => {
       res.writeHead(500).end('Unable to read a local asset');
     }
   }
-}).listen(port, '127.0.0.1', () => console.log('喵喵识字镇 · http://127.0.0.1:' + port));
+}).listen(port, '127.0.0.1', () => console.log('猫猫学中文 · http://127.0.0.1:' + port));
