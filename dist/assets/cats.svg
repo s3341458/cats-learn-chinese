@@ -16,6 +16,9 @@
   <g id="cocoa"><use href="#face" fill="#d8af8d"/></g>
   <g id="berry"><use href="#face" fill="#e8a8bd"/></g>
   <g id="lilac"><use href="#face" fill="#c1b4df"/></g>
+  <g id="smoky"><use href="#face" fill="#adbac2"/></g>
+  <g id="salt"><use href="#face" fill="#a9c9e7"/></g>
+  <g id="peach"><use href="#face" fill="#f2a487"/></g>
 </defs>
 <use href="#tangerine"/>
 </svg>

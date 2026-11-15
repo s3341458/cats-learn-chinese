@@ -1,4 +1,4 @@
-import { lessons } from './lessons.js';
+import { lessons, volumes } from './lessons.js';
 import { availability, dayAfter, dueCharacters, recordAnswer, save, state } from './progress.js';
 import { setupTracing } from './tracing.js';
 
@@ -25,6 +25,9 @@ let parentHeld = false;
 let speechId = 0;
 let cleanupTracing;
 let panelReturn;
+const characterCount = new Set(lessons.flatMap(({ words }) => words.map(({ han }) => han))).size;
+const nextStop = () => Math.min(state.completed.length, lessons.length - 1);
+let activeVolume = lessons[nextStop()].volume;
 
 function notify(message) {
   clearTimeout(noticeTimer);
@@ -73,18 +76,31 @@ function showHome(opened) {
 
 function renderMap() {
   const count = state.completed.length;
+  const volume = volumes[activeVolume];
+  const currentVolume = lessons[nextStop()].volume;
   $('album-count').textContent = `${count} / ${lessons.length}`;
   $('progress-count').textContent = `${count} / ${lessons.length} 关`;
+  $('course-progress').setAttribute('aria-valuemax', lessons.length);
   $('course-progress').setAttribute('aria-valuenow', count);
   $('progress-fill').style.width = `${count / lessons.length * 100}%`;
   $('sound').setAttribute('aria-pressed', state.sound);
   $('sound').innerHTML = icon(state.sound ? 'sound' : 'muted');
-  $('map-tip').textContent = count === lessons.length
-    ? '六站都探索完啦！点任意一站可以重读。'
-    : availability(count) === 'tomorrow'
-      ? '今天的故事读完啦，下一站明天开放。'
-      : '点亮的站点可以开始。每天读一站。';
+  let tip = '点亮的站点可以开始。每天读一站。';
+  if (count === lessons.length) tip = '所有故事都读完啦！点任意一站可以重读。';
+  else if (activeVolume < currentVolume) tip = `这册已读完。翻到「${volumes[currentVolume].title}」继续。`;
+  else if (activeVolume > currentVolume) tip = `先完成「${volumes[currentVolume].title}」，再来这一册。`;
+  else if (availability(count) === 'tomorrow') tip = '今天的故事读完啦，下一站明天开放。';
+  $('map-tip').textContent = tip;
+  $('routes').innerHTML = volumes.map((route, index) => {
+    const done = lessons.slice(0, count).filter((lesson) => lesson.volume === index).length;
+    return `<button id="route-${index}" data-route="${index}" aria-pressed="${activeVolume === index}" aria-controls="map-section">
+      ${route.title}<span>${done} / ${route.lessons.length}</span></button>`;
+  }).join('');
+  if ($('map-art').getAttribute('src') !== volume.image) $('map-art').src = volume.image;
+  $('map-name').textContent = volume.title;
+  $('map-section').setAttribute('aria-label', `${volume.title}地图`);
   $('stops').innerHTML = lessons.map((lesson, i) => {
+    if (lesson.volume !== activeVolume) return '';
     const status = availability(i);
     const resumed = status === 'open' && state.resume?.index === i;
     const label = { done: '已完成，可以重读', open: resumed ? '继续' : '开始', tomorrow: '明天开放', locked: '未解锁' }[status];
@@ -112,7 +128,7 @@ function showPanel(title, content, returnId) {
 
 function showAlbum() {
   showPanel('猫猫贴纸册', `
-    <p class="reward-copy">已贴上 ${state.completed.length} / ${lessons.length} 张猫咪贴纸。${state.completed.length === lessons.length ? '六只猫猫都到齐啦！' : ''}</p>
+    <p class="reward-copy">已贴上 ${state.completed.length} / ${lessons.length} 张猫咪贴纸。${state.completed.length === lessons.length ? '猫猫都到齐啦！' : ''}</p>
     <ul class="sticker-grid">${lessons.map((lesson, i) => {
       const owned = i < state.completed.length;
       return `<li class="sticker${owned ? '' : ' is-empty'}">
@@ -155,6 +171,10 @@ const artSymbols = {
 
 function art(value, lesson) {
   if (value === 'cat') return cat(lesson.cat);
+  if (value.startsWith('map-')) return `<span class="map-art ${value}" aria-hidden="true"></span>`;
+  if (['field-grid', 'soil', 'soil-hill', 'water-glass'].includes(value)) {
+    return `<span class="object-art ${value}" aria-hidden="true"></span>`;
+  }
   if (value === 'above' || value === 'below') return `<span class="position-art ${value}" aria-hidden="true"><i></i><i></i></span>`;
   if (value === 'big-small') return '<span class="size-art" aria-hidden="true">● <small>●</small></span>';
   if (value === 'big-fish' || value === 'small-fish') return `<span class="${value}" aria-hidden="true">🐟</span>`;
@@ -177,6 +197,8 @@ function shuffle(values) {
 const currentLesson = () => lessons[run.index];
 const currentWord = () => currentLesson().words[run.stage === 'first' ? 0 : 1];
 const currentPhrase = () => currentLesson().phrases[run.round];
+const chapterLandscape = (lesson) =>
+  `style="--book-map:url('${volumes[lesson.volume].image}');--book-position:${lesson.at[0]}% center"`;
 
 function initializeRound() {
   if (run.choices) return;
@@ -290,7 +312,7 @@ function chapter(title, content, tip) {
 function showFilm() {
   const lesson = currentLesson();
   return chapter(lesson.title, `
-    <div class="film-frame"><span class="film-scenery">${art(lesson.scene, lesson)}</span>${sprite('car', 'film-car')}<span class="film-spark" aria-hidden="true">✦</span></div>
+    <div class="film-frame" ${chapterLandscape(lesson)}><span class="film-scenery">${art(lesson.scene, lesson)}</span>${sprite('car', 'film-car')}<span class="film-spark" aria-hidden="true">✦</span></div>
     <p class="film-caption">${lesson.intro}</p>
     <div class="panel-actions">${secondary('播放开场', 'play-film', 'sound')}${primary('开始认字', 'advance')}</div>`,
     '先一起看看猫猫今天遇到了什么。孩子想直接认字时，可以跳过开场。');
@@ -398,7 +420,7 @@ function showStory() {
   const lesson = currentLesson();
   return chapter('一起读绘本', `
     <div class="spread">
-      <figure class="storybook-art">${sprite('car')}<span>${art(lesson.scene, lesson)}</span></figure>
+      <figure class="storybook-art" ${chapterLandscape(lesson)}>${sprite('car')}<span>${art(lesson.scene, lesson)}</span></figure>
       <article class="storybook-text"><h3>${lesson.title}</h3><p>${storyText(lesson)}</p></article>
     </div>
     <div class="panel-actions">${secondary('朗读整页', 'read-story', 'sound')}${primary('读完了', 'advance')}</div>`,
@@ -461,14 +483,23 @@ function showDrive() {
 function showFinish() {
   const last = run.index === lessons.length - 1;
   const lesson = currentLesson();
+  const route = volumes[lesson.volume];
+  const next = lessons[run.index + 1];
+  const endOfVolume = last || next.volume !== lesson.volume;
+  const title = last ? '喵喵识字镇毕业啦！' :
+    endOfVolume ? `${route.title}读完啦！` : `${lesson.name}探险完成！`;
+  const read = `今天认识了「${lesson.words[0].han}」和「${lesson.words[1].han}」。`;
+  let note = '';
+  if (!last && availability(run.index + 1) === 'tomorrow') note = endOfVolume
+    ? `明天来读「${volumes[next.volume].title}」。` : '明天再来找下一只猫猫。';
+  else if (!last && endOfVolume) note = `翻到「${volumes[next.volume].title}」继续。`;
   return `<div class="chapter finish-page">
     <div class="finish-stamp">${icon('check')} 第 ${run.index + 1} 站</div>
-    <h2 id="scene-title" tabindex="-1">${last ? '喵喵识字镇毕业啦！' : `${lesson.name}探险完成！`}</h2>
-    <div class="finish-cats">${last
-      ? lessons.map((item) => cat(item.cat)).join('')
+    <h2 id="scene-title" tabindex="-1">${title}</h2>
+    <div class="finish-cats">${endOfVolume
+      ? (last ? lessons : route.lessons).map((item) => cat(item.cat)).join('')
       : `${run.index ? cat(lesson.cat) : sprite('cat')}${sprite('car')}`}</div>
-    <p>${last ? '十二个汉字、六个故事，六只猫猫都在你的贴纸册里。' :
-      `今天认识了「${lesson.words[0].han}」和「${lesson.words[1].han}」。${availability(run.index + 1) === 'tomorrow' ? '明天再来找下一只猫猫。' : ''}`}</p>
+    <p>${last ? `读完 ${lessons.length} 个故事，认识 ${characterCount} 个汉字，贴纸册也集齐了。` : read + note}</p>
     <div class="panel-actions">${secondary('看看贴纸册', 'finish-album', 'book')}${primary('回到小镇地图', 'home', 'home')}</div>
   </div>`;
 }
@@ -664,7 +695,7 @@ $('open-book').addEventListener('click', () => {
   save();
   showHome(true);
   window.scrollTo(0, 0);
-  $('stop-' + Math.min(state.completed.length, lessons.length - 1))?.focus({ preventScroll: true });
+  $('stop-' + nextStop())?.focus({ preventScroll: true });
 });
 $('cover-back').addEventListener('click', () => {
   state.opened = false;
@@ -675,6 +706,13 @@ $('cover-back').addEventListener('click', () => {
 $('stops').addEventListener('click', (event) => {
   const stop = event.target.closest('[data-stop]');
   if (stop) begin(Number(stop.dataset.stop));
+});
+$('routes').addEventListener('click', (event) => {
+  const target = event.target.closest('[data-route]');
+  if (!target) return;
+  activeVolume = Number(target.dataset.route);
+  renderMap();
+  $(`route-${activeVolume}`).focus({ preventScroll: true });
 });
 $('sound').addEventListener('click', () => {
   state.sound = !state.sound;
@@ -720,7 +758,9 @@ panel.addEventListener('click', (event) => {
 
 journey.addEventListener('close', () => {
   if (journey.open) return;
-  const index = run?.index;
+  let index = run?.index;
+  if (run?.stage === 'finish' && index + 1 === state.completed.length) index = nextStop();
+  if (lessons[index]) activeVolume = lessons[index].volume;
   clearTimeout(timer);
   clearTimeout(bonusTimer);
   stopSpeech();

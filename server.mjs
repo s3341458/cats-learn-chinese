@@ -10,6 +10,7 @@ const files = new Map([
   ['/app.js', 'text/javascript; charset=utf-8'],
   ['/lessons.js', 'text/javascript; charset=utf-8'],
   ['/assets/kitten-stickers.png', 'image/png'],
+  ['/assets/countryside.jpg', 'image/jpeg'],
   ['/assets/town.svg', 'image/svg+xml'],
   ['/assets/cats.svg', 'image/svg+xml'],
 ]);

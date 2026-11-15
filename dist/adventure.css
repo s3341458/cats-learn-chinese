@@ -53,6 +53,25 @@
 .cover .primary { padding-inline: 23px; }
 .stop.is-tomorrow .stop-disc { background: #e4deed; border-color: #99849e; }
 #guide { touch-action: manipulation; user-select: none; }
+.route-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 10px;
+}
+.route-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 12px;
+  border: 1px solid #dfcbb0;
+  border-radius: 10px;
+  background: #fff9ee;
+  font-size: 13px;
+  font-weight: 750;
+}
+.route-tabs button span { font-size: 11px; font-weight: 600; color: #775f51; }
+.route-tabs button[aria-pressed="true"] { background: #f9e9ce; color: #8b463b; border-color: #c18f6d; }
 
 #journey {
   inset: 0;
@@ -172,7 +191,7 @@
   box-shadow: 0 5px 0 #ead9c4;
   overflow: hidden;
   position: relative;
-  background: #f6ecd4 url('/assets/town.svg') center / cover no-repeat;
+  background: #f6ecd4 var(--book-map) var(--book-position) / cover no-repeat;
 }
 .film-frame::after {
   content: "";
@@ -264,6 +283,51 @@
 .read-card { width: auto; min-width: 140px; max-width: 100%; min-height: 75px; padding: 8px 16px; aspect-ratio: auto; font-size: clamp(39px, 8vw, 75px); }
 .picture-tiles .tile { min-height: 73px; font-size: clamp(23px, 6vw, 57px); aspect-ratio: .95; }
 .emoji-art { white-space: nowrap; }
+.map-art {
+  display: block;
+  width: 78%;
+  min-width: 36px;
+  aspect-ratio: 1;
+  border-radius: 7px;
+  background-image: url('/assets/countryside.jpg');
+  background-size: 520% auto;
+}
+.map-bridge { background-position: 44% 46%; }
+.map-path { background-position: 10% 76%; }
+.map-stream { background-position: 39% 20%; background-size: 650% auto; }
+.map-kiln { background-position: 61% 22%; }
+.map-paddy { background-position: 84.5% 25%; }
+.object-art {
+  display: block;
+  position: relative;
+  width: 1em;
+  aspect-ratio: 1;
+}
+.field-grid {
+  background:
+    linear-gradient(90deg, transparent 46%, #bb8a58 46% 54%, transparent 54%),
+    linear-gradient(transparent 46%, #bb8a58 46% 54%, transparent 54%),
+    repeating-linear-gradient(30deg, #a0af6d 0 6px, #b2bf81 6px 11px);
+  border: .06em solid #a4784d;
+  border-radius: .06em;
+  transform: rotate(-6deg);
+}
+.soil {
+  background: radial-gradient(ellipse at 50% 34%, #725242 0 28%, #ad8463 29% 31%, transparent 32%),
+    linear-gradient(105deg, #b8846a, #d6a686);
+  clip-path: polygon(4% 29%, 12% 18%, 87% 18%, 96% 29%, 82% 84%, 19% 84%);
+}
+.soil-hill {
+  background: repeating-linear-gradient(160deg, #ac7e58 0 8px, #b98b66 8px 15px);
+  clip-path: polygon(0 86%, 10% 78%, 26% 55%, 39% 36%, 55% 35%, 82% 66%, 100% 86%);
+}
+.water-glass {
+  width: .72em;
+  border: .05em solid #5c8b94;
+  border-radius: .07em .07em .16em .16em;
+  background: linear-gradient(155deg, #fffbec 25%, #d9eef2 26%, #f6fcf5 44%, #92c7d3 45%, #75acbd 100%);
+  box-shadow: inset .08em 0 #fffcf1a8;
+}
 .big-fish { font-size: 1.15em; }
 .small-fish { font-size: .62em; }
 .wood-table, .stairs-art { display: block; position: relative; width: 1.2em; height: 1em; }
@@ -307,7 +371,7 @@
   place-items: center;
   isolation: isolate;
   overflow: hidden;
-  background: #eee5cd url('/assets/town.svg') center / cover;
+  background: #eee5cd var(--book-map) var(--book-position) / cover;
 }
 .storybook-art .sprite { position: absolute; bottom: 7%; left: 5%; width: min(53%, 172px); }
 .storybook-art > span:last-child { position: absolute; top: 11%; right: 7%; font-size: clamp(32px, 7vw, 70px); }
