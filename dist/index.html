@@ -8,6 +8,7 @@
   <title>喵喵识字镇 · Meow Word Town</title>
   <link rel="icon" href="/assets/cats.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/adventure.css">
   <script type="module" src="/app.js"></script>
 </head>
 <body>
@@ -19,12 +20,26 @@
   <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 1 1 8 0v3m-4 5v2"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
   <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15m-6-6 6 6-6 6"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 11 9-8 9 8M5 10v10h14V10m-9 10v-6h4v6"/></symbol>
   <symbol id="i-hint" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/></symbol>
 </svg>
+<section id="cover" class="cover" aria-labelledby="cover-title" hidden>
+  <div class="cover-page">
+    <p class="cover-edition" lang="en">MEOW WORD TOWN</p>
+    <h1 id="cover-title">喵喵识字镇</h1>
+    <p class="cover-subtitle">跟猫猫读故事、认汉字</p>
+    <div class="cover-cats" aria-hidden="true">
+      <span class="sprite sprite-cat"></span><span class="sprite sprite-car"></span>
+    </div>
+    <button class="primary" id="open-book">打开绘本 <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+  </div>
+</section>
+<div id="town" hidden>
 <header class="topbar">
   <div class="topbar-inner">
     <div class="brand"><svg class="brand-cat" viewBox="0 0 120 120" aria-hidden="true"><use href="/assets/cats.svg#tangerine"/></svg><span>喵喵识字镇<small>MEOW WORD TOWN</small></span></div>
     <div class="top-actions">
+      <button id="cover-back" class="icon-button" aria-label="返回绘本封面" title="返回封面"><svg class="icon"><use href="#i-home"/></svg></button>
       <button id="sound" class="icon-button" aria-label="发音" aria-pressed="true"><svg class="icon"><use href="#i-sound"/></svg></button>
       <button id="album" class="album-button"><svg class="icon"><use href="#i-book"/></svg><span>贴纸册</span><b id="album-count">0 / 6</b></button>
     </div>
@@ -50,11 +65,13 @@
     </div>
     <div class="map-footer">
       <p><svg class="icon"><use href="#i-hint"/></svg><span id="map-tip">点亮的站点可以开始，完成一关就会打开下一站。</span></p>
-      <button class="text-button" id="guide">家长小提示 <span aria-hidden="true">↗</span></button>
+      <button class="text-button" id="guide">家长角 <span>· 按住</span></button>
     </div>
   </section>
   <footer>每天学一点，猫猫陪你读。<svg class="icon"><use href="#i-paw"/></svg></footer>
 </main>
+</div>
+<dialog id="journey" aria-labelledby="scene-title"><div id="scene"></div></dialog>
 <dialog id="panel" aria-labelledby="panel-title"><div id="panel-body"></div></dialog>
 <div id="notice" class="notice" role="status"></div>
 </body>

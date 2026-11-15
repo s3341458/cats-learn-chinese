@@ -4,6 +4,6 @@
   "type": "module",
   "scripts": {
     "dev": "node server.mjs",
-    "check": "node --check server.mjs && node --check dist/app.js && node --check dist/lessons.js"
+    "check": "node --check server.mjs && node --check dist/app.js && node --check dist/lessons.js && node --check dist/progress.js && node --check dist/tracing.js"
   }
 }

@@ -3,9 +3,13 @@ import { readFile } from 'node:fs/promises';
 
 const files = new Map([
   ['/index.html', 'text/html; charset=utf-8'],
+  ['/adventure.css', 'text/css; charset=utf-8'],
+  ['/progress.js', 'text/javascript; charset=utf-8'],
+  ['/tracing.js', 'text/javascript; charset=utf-8'],
   ['/style.css', 'text/css; charset=utf-8'],
   ['/app.js', 'text/javascript; charset=utf-8'],
   ['/lessons.js', 'text/javascript; charset=utf-8'],
+  ['/assets/kitten-stickers.png', 'image/png'],
   ['/assets/town.svg', 'image/svg+xml'],
   ['/assets/cats.svg', 'image/svg+xml'],
 ]);
