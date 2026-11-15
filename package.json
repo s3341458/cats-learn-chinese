@@ -1,0 +1,9 @@
+{
+  "name": "meow-word-town",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server.mjs",
+    "check": "node --check server.mjs && node --check dist/app.js && node --check dist/lessons.js"
+  }
+}
