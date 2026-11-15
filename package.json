@@ -1,6 +1,7 @@
 {
   "name": "meow-word-town",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "node server.mjs",
