@@ -28,7 +28,7 @@ const town = [
   {
     name: '猫猫家', cat: 'tangerine', sticker: '橘子猫', at: [12.8, 47.5],
     title: '橘子猫的第一封信', scene: '🏠✉️',
-    intro: '叮咚！橘子猫收到一封信。信上有一张站着的人，还有一张圆圆的嘴巴。它们能变成什么字呢？',
+    intro: '叮咚！橘子猫收到一封信。信上画着一个站着的人，还有一张圆圆的嘴巴。它们能变成什么字呢？',
     words: [
       word('人', 'rén', 'person', 'person', '请孩子站起来，把两只脚分开。看看身体像不像「人」。', '想想两只脚向两边分开的样子。', ['入', '八', '大']),
       word('口', 'kǒu', 'mouth', 'mouth', '张开嘴说「啊」，再用手指在空中画一个方方的「口」。', '想想嘴巴张开，四周围起来的样子。', ['日', '中', '回']),
@@ -180,3 +180,5 @@ export const volumes = [
 ];
 export const lessons = volumes.flatMap((volume, index) =>
   volume.lessons.map((lesson) => ({ ...lesson, volume: index })));
+
+export const introTrack = ({ cat }) => `/audio/intro/${cat}.mp3`;

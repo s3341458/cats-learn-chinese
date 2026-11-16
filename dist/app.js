@@ -1,4 +1,4 @@
-import { lessons, volumes } from './lessons.js';
+import { introTrack, lessons, volumes } from './lessons.js';
 import { availability, dayAfter, dueCharacters, recordAnswer, save, state } from './progress.js';
 import { setupTracing } from './tracing.js';
 
@@ -37,6 +37,7 @@ function notify(message) {
 
 function stopSpeech() {
   speechId++;
+  scene.querySelector('.film-narration')?.pause();
   window.speechSynthesis?.cancel();
 }
 
@@ -313,16 +314,44 @@ function showFilm() {
   const lesson = currentLesson();
   return chapter(lesson.title, `
     <div class="film-frame" ${chapterLandscape(lesson)}><span class="film-scenery">${art(lesson.scene, lesson)}</span>${sprite('car', 'film-car')}<span class="film-spark" aria-hidden="true">✦</span></div>
+    <audio class="film-narration" src="${introTrack(lesson)}" preload="none" hidden></audio>
     <p class="film-caption">${lesson.intro}</p>
     <div class="panel-actions">${secondary('播放开场', 'play-film', 'sound')}${primary('开始认字', 'advance')}</div>`,
     '先一起看看猫猫今天遇到了什么。孩子想直接认字时，可以跳过开场。');
 }
 
 function playFilm() {
+  stopSpeech();
+  const currentId = speechId;
+  const lesson = currentLesson();
   const frame = scene.querySelector('.film-frame');
-  frame.classList.remove('playing');
-  requestAnimationFrame(() => frame.classList.add('playing'));
-  speak(currentLesson().intro);
+  const clip = scene.querySelector('.film-narration');
+  const status = $('speech-status');
+  const animate = () => {
+    frame.classList.remove('playing');
+    requestAnimationFrame(() => {
+      if (frame.isConnected) frame.classList.add('playing');
+    });
+  };
+
+  status.textContent = '';
+  if (!state.sound) {
+    animate();
+    return;
+  }
+
+  clip.currentTime = 0;
+  clip.play().then(() => {
+    if (currentId === speechId) animate();
+  }).catch((error) => {
+    if (currentId !== speechId) return;
+    animate();
+    if (error.name === 'NotAllowedError') {
+      status.textContent = '点「播放开场」听旁白。';
+    } else {
+      speak(lesson.intro);
+    }
+  });
 }
 
 function traceCard(word) {
