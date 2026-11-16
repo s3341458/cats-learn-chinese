@@ -35,6 +35,12 @@ python scripts/generate-intros.py
 
 ## 部署与许可证
 
-在 Vercel 导入本仓库后，它会运行 `npm run check` 并发布 `dist/` 中的静态页面，无须配置环境变量。学习进度和贴纸保存在使用者的浏览器里。
+AWS 部署使用 `infra/cloudfront.yml`，由 CloudFront 经 HTTPS 提供私有 S3 中的 `dist/` 静态文件。用管理目标域名公开 Route 53 托管区的 AWS 身份运行：
+
+```sh
+bash scripts/deploy-cloudfront.sh cats-learn-chinese.theyucheng.com <hosted-zone-id>
+```
+
+脚本会在 `us-east-1` 创建或更新站点，上传静态文件，并刷新 CloudFront 缓存。首次部署需要等待 ACM 验证域名和 CloudFront 生效。学习进度和贴纸保存在使用者的浏览器里，每个网址各自保存。
 
 本项目采用 [MIT 许可证](LICENSE)。
