@@ -29,16 +29,16 @@ def trim_sentence(audio):
 
 
 def render(pipeline, text, track, speed, pause):
-    sentences = re.findall(r"[^。！？]+[。！？]?", text)
+    plain = re.sub(r"[「」“”]", "", text)
+    sentences = re.findall(r"[^。！？]+[。！？]?", plain)
     pieces = []
     for sentence in sentences:
-        spoken = sentence.replace("「", "").replace("」", "")
         clips = [
-            result.audio.numpy() for result in pipeline(spoken, voice=VOICE, speed=speed)
+            result.audio.numpy() for result in pipeline(sentence, voice=VOICE, speed=speed)
             if result.audio is not None
         ]
         if not clips:
-            raise ValueError(f"No audio generated for {spoken!r}")
+            raise ValueError(f"No audio generated for {sentence!r}")
         pieces.append(trim_sentence(np.concatenate(clips)))
         pieces.append(np.zeros(int(RATE * pause), dtype=np.float32))
 
@@ -57,15 +57,22 @@ def main():
     args = parser.parse_args()
     data = json.loads(subprocess.check_output([
         "node", "--input-type=module", "-e",
-        "import { introTrack, lessons, traceGuide } from './dist/lessons.js'; "
+        "import { introTrack, lessons, phraseTrack, storyTrack, traceGuide } from './dist/lessons.js'; "
         "console.log(JSON.stringify({traceGuide, intros: lessons.map(lesson => "
-        "({text: lesson.intro, track: introTrack(lesson)}))}));",
+        "({text: lesson.intro, track: introTrack(lesson)})), "
+        "stories: lessons.map(lesson => ({text: lesson.story, track: storyTrack(lesson)})), "
+        "phrases: lessons.flatMap(lesson => lesson.phrases.map(phrase => "
+        "({text: phrase.han, track: phraseTrack(phrase)})))}));",
     ], cwd=ROOT))
     torch.set_num_threads(2)
     pipeline = KPipeline(lang_code="z", repo_id=MODEL, device="cpu")
     if not args.trace_only:
         for intro in data["intros"]:
             render(pipeline, intro["text"], intro["track"], speed=0.88, pause=0.23)
+        for story in data["stories"]:
+            render(pipeline, story["text"], story["track"], speed=0.85, pause=0.28)
+        for phrase in data["phrases"]:
+            render(pipeline, phrase["text"], phrase["track"], speed=0.80, pause=0.14)
     guide = data["traceGuide"]
     render(pipeline, guide["text"], guide["track"], speed=0.79, pause=0.36)
 
