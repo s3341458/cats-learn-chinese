@@ -18,6 +18,13 @@ npm run dev
 
 `npm run check` 检查 JavaScript 语法。关卡文字和笔顺在 `dist/lessons.js`。发音使用设备可用的普通话语音，听音题也可打开拼音提示。
 
+过场旁白用 [Kokoro 的普通话模型](https://huggingface.co/hexgrad/Kokoro-82M-v1.1-zh) 提前合成，成品位于 `dist/audio/intro/`。浏览器直接播放音频，遇到读取错误时使用设备语音。单字、词语和绘本整页仍使用原来的设备语音。修改开场白后，可用 Python 3.12 重新生成：
+
+```sh
+python -m pip install "kokoro==0.9.4" "misaki[zh]==0.9.4" "soundfile>=0.13,<1"
+python scripts/generate-intros.py
+```
+
 猫咪和小车插画由内置 ImageGen 生成，保存在 `dist/assets/kitten-stickers.png`。提示词为绘本水粉与彩铅风格、两张分离的透明贴纸，内容是戴薄荷绿领巾的橘猫和它开的薄荷绿玩具车，只画猫，不加文字或品牌。
 
 郊游地图由内置 ImageGen 生成，保存在 `dist/assets/countryside.jpg`。提示词为横向水粉和彩铅绘本地图，三处停留点分别留给山石、溪水石桥与砖窑、金色稻田和农舍，路边有一只小猫，画面不含文字和编号。

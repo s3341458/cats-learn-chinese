@@ -1,5 +1,6 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
+import { introTrack, lessons } from './dist/lessons.js';
 
 const files = new Map([
   ['/index.html', 'text/html; charset=utf-8'],
@@ -13,7 +14,37 @@ const files = new Map([
   ['/assets/countryside.jpg', 'image/jpeg'],
   ['/assets/town.svg', 'image/svg+xml'],
   ['/assets/cats.svg', 'image/svg+xml'],
+  ...lessons.map((lesson) => [introTrack(lesson), 'audio/mpeg']),
 ]);
+
+function sendAsset(req, res, type, contents) {
+  const headers = { 'Content-Type': type, 'Cache-Control': 'no-cache' };
+  const body = req.method === 'GET' ? contents : undefined;
+  if (type !== 'audio/mpeg') {
+    res.writeHead(200, headers).end(body);
+    return;
+  }
+
+  const size = contents.length;
+  headers['Accept-Ranges'] = 'bytes';
+  const [, from, to] = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range ?? '') ?? [];
+  if (!from && !to) {
+    res.writeHead(200, { ...headers, 'Content-Length': size }).end(body);
+    return;
+  }
+
+  const start = from ? Number(from) : Math.max(0, size - Number(to));
+  const end = from && to ? Math.min(Number(to), size - 1) : size - 1;
+  if (start >= size || start > end) {
+    res.writeHead(416, { ...headers, 'Content-Range': `bytes */${size}` }).end();
+    return;
+  }
+  res.writeHead(206, {
+    ...headers,
+    'Content-Length': end - start + 1,
+    'Content-Range': `bytes ${start}-${end}/${size}`,
+  }).end(body?.subarray(start, end + 1));
+}
 
 const port = Number(process.env.PORT ?? 9018);
 createServer(async (req, res) => {
@@ -27,8 +58,7 @@ createServer(async (req, res) => {
   } else {
     try {
       const contents = await readFile(new URL('./dist' + file, import.meta.url));
-      res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-cache' });
-      res.end(req.method === 'GET' ? contents : undefined);
+      sendAsset(req, res, type, contents);
     } catch (error) {
       console.error(error.message);
       res.writeHead(500).end('Unable to read a local asset');
