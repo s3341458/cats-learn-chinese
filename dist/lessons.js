@@ -182,3 +182,8 @@ export const lessons = volumes.flatMap((volume, index) =>
   volume.lessons.map((lesson) => ({ ...lesson, volume: index })));
 
 export const introTrack = ({ cat }) => `/audio/intro/${cat}.mp3`;
+
+export const traceGuide = {
+  text: '先把手指放在亮点上。再沿着灰线，慢慢写。',
+  track: '/audio/instructions/trace.mp3',
+};

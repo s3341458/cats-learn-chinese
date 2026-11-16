@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { introTrack, lessons } from './dist/lessons.js';
+import { introTrack, lessons, traceGuide } from './dist/lessons.js';
 
 const files = new Map([
   ['/index.html', 'text/html; charset=utf-8'],
@@ -14,6 +14,7 @@ const files = new Map([
   ['/assets/countryside.jpg', 'image/jpeg'],
   ['/assets/town.svg', 'image/svg+xml'],
   ['/assets/cats.svg', 'image/svg+xml'],
+  [traceGuide.track, 'audio/mpeg'],
   ...lessons.map((lesson) => [introTrack(lesson), 'audio/mpeg']),
 ]);
 

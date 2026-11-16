@@ -1,4 +1,4 @@
-import { introTrack, lessons, volumes } from './lessons.js';
+import { introTrack, lessons, traceGuide, volumes } from './lessons.js';
 import { availability, dayAfter, dueCharacters, recordAnswer, save, state } from './progress.js';
 import { setupTracing } from './tracing.js';
 
@@ -37,7 +37,7 @@ function notify(message) {
 
 function stopSpeech() {
   speechId++;
-  scene.querySelector('.film-narration')?.pause();
+  scene.querySelector('audio')?.pause();
   window.speechSynthesis?.cancel();
 }
 
@@ -321,37 +321,44 @@ function showFilm() {
 }
 
 function playFilm() {
-  stopSpeech();
-  const currentId = speechId;
-  const lesson = currentLesson();
   const frame = scene.querySelector('.film-frame');
-  const clip = scene.querySelector('.film-narration');
-  const status = $('speech-status');
   const animate = () => {
     frame.classList.remove('playing');
     requestAnimationFrame(() => {
       if (frame.isConnected) frame.classList.add('playing');
     });
   };
+  playSceneAudio(currentLesson().intro, '播放开场', animate);
+}
 
+function playSceneAudio(text, replayLabel, onStart) {
+  stopSpeech();
+  const currentId = speechId;
+  const clip = scene.querySelector('audio');
+  const status = $('speech-status');
   status.textContent = '';
   if (!state.sound) {
-    animate();
+    onStart?.();
     return;
   }
 
   clip.currentTime = 0;
   clip.play().then(() => {
-    if (currentId === speechId) animate();
+    if (currentId === speechId) onStart?.();
   }).catch((error) => {
     if (currentId !== speechId) return;
-    animate();
+    onStart?.();
     if (error.name === 'NotAllowedError') {
-      status.textContent = '点「播放开场」听旁白。';
+      status.textContent = `点「${replayLabel}」听一遍。`;
     } else {
-      speak(lesson.intro);
+      speak(text);
     }
   });
+}
+
+function playTraceGuide() {
+  if (state.sound) run.traceGuidePlayed = true;
+  playSceneAudio(traceGuide.text, '听写字提示');
 }
 
 function traceCard(word) {
@@ -363,18 +370,24 @@ function traceCard(word) {
   </svg>`;
 }
 
+function traceProgress(stroke, total) {
+  return stroke >= total ? '写好啦！' : `第 ${stroke + 1} 笔，共 ${total} 笔`;
+}
+
 function showWord() {
   const word = currentWord();
   const lesson = currentLesson();
   const mode = run.wordMode;
   if (mode === 'trace') {
     const done = run.stroke >= word.strokes.length;
-    return chapter(`跟着笔顺写「${word.han}」`, `
+    return chapter(`跟猫猫写「${word.han}」`, `
       ${traceCard(word)}
-      <p class="phase-copy" id="trace-count" role="status">${done ? '写好啦！' : `第 ${run.stroke + 1} 笔 / 共 ${word.strokes.length} 笔，从圆点开始。`}</p>
+      <audio class="trace-narration" src="${traceGuide.track}" preload="none" hidden></audio>
+      <p class="phase-copy" id="trace-count" role="status">${traceProgress(run.stroke, word.strokes.length)}</p>
+      <p class="phase-copy" id="trace-instruction" ${done ? 'hidden' : ''}>${traceGuide.text}</p>
       <div class="panel-actions" id="trace-actions">${done
-        ? primary('继续', 'advance') : `${secondary('演示这一笔', 'demo-stroke')}${secondary('跳过描红', 'advance', 'arrow')}`}</div>`,
-      '请孩子从亮点开始，顺着灰色笔画慢慢描。可以先看一笔示范，也可以跳过。');
+        ? primary('继续', 'advance') : `${secondary('听写字提示', 'hear-trace', 'sound')}${secondary('看示范', 'demo-stroke')}${secondary('跳过描红', 'advance', 'arrow')}`}</div>`,
+      '请让孩子照自己的速度写。需要帮忙时，可以先看这一笔怎么写。');
   }
   const revealed = mode === 'glyph';
   return chapter(revealed ? `一起读「${word.han}」` : '点图，看看会变成什么字', `
@@ -399,11 +412,11 @@ function quizFeedback(label) {
 
 function showListening() {
   const question = run.questions[run.round];
-  return chapter('听猫猫说，点出那个字', `
+  return chapter('听一听，找一找', `
     ${rounds(run.round, run.questions.length)}
     ${secondary('听题', 'hear-question', 'sound')}
     <div class="tile-row">${run.choices.map((han, i) => tile(han, i)).join('')}</div>
-    ${quizFeedback('听到以后再选。')}
+    ${quizFeedback('听一听，然后点出你听到的字。')}
     <button class="text-button" data-action="show-hint">用拼音提示</button>`,
     `先听读音，再认字形。答错可以继续试。需要帮忙时，想一想：${question.hint}`);
 }
@@ -557,10 +570,10 @@ function renderScene(focus = true) {
     cleanupTracing = setupTracing($('trace'), Math.min(run.stroke, word.strokes.length), (count) => {
       run.stroke = count;
       checkpoint();
-      if (count < word.strokes.length) {
-        $('trace-count').textContent = `第 ${count + 1} 笔 / 共 ${word.strokes.length} 笔，从圆点开始。`;
-      } else {
-        $('trace-count').textContent = '写好啦！';
+      $('trace-count').textContent = traceProgress(count, word.strokes.length);
+      if (count === word.strokes.length) {
+        stopSpeech();
+        $('trace-instruction').hidden = true;
         $('trace-actions').innerHTML = primary('继续', 'advance');
         $('trace-actions').querySelector('button').focus({ preventScroll: true });
       }
@@ -586,7 +599,7 @@ function nextItem() {
 
 function hearQuestion() {
   const word = run.questions[run.round];
-  speak(`请找出读作「${word.han}」的字。`, `听音提示：${word.py}`);
+  speak(word.han, `听音提示：${word.py}`);
 }
 
 function hearPhrase() {
@@ -841,10 +854,15 @@ scene.addEventListener('click', (event) => {
       playFilm();
       break;
     case 'turn-word':
+      if (run.wordMode === 'glyph') stopSpeech();
       run.wordMode = run.wordMode === 'picture' ? 'glyph' : 'trace';
       checkpoint();
       renderScene();
       if (run.wordMode === 'glyph') speak(currentWord().han, currentWord().py);
+      else if (!run.traceGuidePlayed && run.stroke < currentWord().strokes.length) playTraceGuide();
+      break;
+    case 'hear-trace':
+      playTraceGuide();
       break;
     case 'demo-stroke':
       cleanupTracing?.();
