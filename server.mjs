@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { introTrack, lessons } from './dist/lessons.js';
+import { introTrack, lessons, phraseTrack, storyTrack, traceGuide } from './dist/lessons.js';
 
 const files = new Map([
   ['/index.html', 'text/html; charset=utf-8'],
@@ -14,7 +14,11 @@ const files = new Map([
   ['/assets/countryside.jpg', 'image/jpeg'],
   ['/assets/town.svg', 'image/svg+xml'],
   ['/assets/cats.svg', 'image/svg+xml'],
-  ...lessons.map((lesson) => [introTrack(lesson), 'audio/mpeg']),
+  ['/assets/cards-town.jpg', 'image/jpeg'],
+  ['/assets/cards-outdoors.jpg', 'image/jpeg'],
+  [traceGuide.track, 'audio/mpeg'],
+  ...lessons.flatMap((lesson) => [introTrack(lesson), storyTrack(lesson), ...lesson.phrases.map(phraseTrack)])
+    .map((path) => [path, 'audio/mpeg']),
 ]);
 
 function sendAsset(req, res, type, contents) {

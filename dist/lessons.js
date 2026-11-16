@@ -22,7 +22,9 @@ const strokes = {
 
 const word = (han, py, meaning, art, action, hint, near) =>
   ({ han, py, meaning, art, action, hint, near, strokes: strokes[han] });
-const phrase = (han, art, label, extra) => ({ han, art, label, extra });
+// Each picture question has two reviewed alternatives. A picture that could
+// also answer the question (for example, a group containing an adult) is excluded.
+const phrase = (han, art, label, extra, alternatives) => ({ han, art, label, extra, alternatives });
 
 const town = [
   {
@@ -34,44 +36,44 @@ const town = [
       word('口', 'kǒu', 'mouth', 'mouth', '张开嘴说「啊」，再用手指在空中画一个方方的「口」。', '想想嘴巴张开，四周围起来的样子。', ['日', '中', '回']),
     ],
     phrases: [
-      phrase('大人', '🧑', '一位大人', '小'),
-      phrase('人口', '🧑👧👵', '三个排在一起的人', '日'),
-      phrase('大口', '😮', '嘴巴张得很大的表情', '人'),
-      phrase('小口', '😗', '嘴巴抿成小圆形的表情', '大'),
+      phrase('大人', 'adult', '一位提着手提包的成年女子', '小', ['child', 'doorway']),
+      phrase('门口', 'doorway', '打开的门和门槛前的地垫', '人', ['adult', 'yawn']),
+      phrase('张口', 'yawn', '小猫把嘴巴张得很大', '人', ['adult', 'doorway']),
+      phrase('小孩', 'child', '抱着玩具熊的小女孩', '大', ['adult', 'doorway']),
     ],
-    story: '橘子猫在门口捡到一封信。一个大人和一个小朋友正在找它。橘子猫张大口，喵了一声。两个人听见了，回头笑着说：“原来你在这里！”',
+    story: '橘子猫在门口捡到一封信。一个大人带着小孩来找信。橘子猫一张口，就喵了一声。小孩听见了，跑过来捡起信，说：“谢谢你，小猫！”',
   },
   {
     name: '小鱼池', cat: 'mint', sticker: '薄荷猫', at: [28.6, 70.5],
-    title: '池边的大小鱼', scene: '🐟🫧',
-    intro: '薄荷猫来到小鱼池。一条大鱼游在前面，一条小鱼跟在后面。我们帮它分一分大小。',
+    title: '大鱼和小鱼', scene: '🐟🫧',
+    intro: '薄荷猫来到小鱼池。一条大鱼游在前面，一条小鱼跟在后面。你能认出哪条鱼大，哪条鱼小吗？',
     words: [
       word('大', 'dà', 'big', 'big', '和孩子一起张开手臂，双脚分开，做出一个「大」。', '想想张开双臂的大字。', ['人', '太', '天']),
       word('小', 'xiǎo', 'small', 'small', '用手指先在中间划一下，再向两边各点一下，看看「小」中间长、两边短。', '找中间长、两边各有一笔的字。', ['少', '水', '大']),
     ],
     phrases: [
-      phrase('大鱼', 'big-fish', '一条大鱼', '小'),
-      phrase('小鱼', 'small-fish', '一条小鱼', '大'),
-      phrase('大小', 'big-small', '一大一小两个圆', '月'),
-      phrase('小猫', 'cat', '一只小猫', '大'),
+      phrase('大鱼', 'big-fish', '一条快占满图卡的橙色鱼', '小', ['small-fish', 'kitten']),
+      phrase('小鱼', 'small-fish', '一条只占图卡一小块的橙色鱼', '大', ['big-fish', 'kitten']),
+      phrase('大门', 'gate', '花园入口的高大双扇门', '小', ['big-fish', 'kitten']),
+      phrase('小猫', 'kitten', '一只坐着的奶油色幼猫', '大', ['small-fish', 'gate']),
     ],
-    story: '小鱼池里有一条大鱼和一条小鱼。薄荷猫是一只小猫，最喜欢看鱼吐泡泡。大鱼吐了一个大泡泡，小鱼吐了一个小泡泡。两个泡泡一起飞了起来。',
+    story: '薄荷猫从花园的大门走进来。这只小猫最喜欢看鱼吐泡泡。大鱼吐了一个大泡泡，小鱼吐了一个小泡泡。两个泡泡飘到水面，一下子就破了。',
   },
   {
     name: '风车田', cat: 'butter', sticker: '奶油猫', at: [43.8, 45.3],
-    title: '太热的晴天', scene: '☀️🌻',
-    intro: '奶油猫想去风车田，今天的太阳太热了。它抬头看了看天，决定带一把伞。',
+    title: '晴天太热啦', scene: '☀️🌻',
+    intro: '奶油猫想去风车田。外面有大太阳，太热啦！它带上一把伞，好在路上遮太阳。',
     words: [
       word('天', 'tiān', 'sky / day', 'sky', '先摆出刚学的「大」，再请孩子想象头顶有一条线，那是天。', '找「大」的头顶多一横的字。', ['大', '太', '夫']),
       word('太', 'tài', 'too / very', 'too', '指给孩子看，大字下面多了一点。一起说「太热啦」。', '找「大」的下面多一点的字。', ['大', '天', '犬']),
     ],
     phrases: [
-      phrase('晴天', '🌤️', '有太阳的晴天', '雨'),
-      phrase('雨天', '🌧️', '下雨的天空', '晴'),
-      phrase('太阳', '☀️', '圆圆的太阳', '天'),
-      phrase('太热', '🥵', '热得流汗的表情', '阳'),
+      phrase('晴天', 'sunny-field', '阳光照着蓝天和草地', '雨', ['rainy-field', 'night-field']),
+      phrase('雨天', 'rainy-field', '乌云下有雨滴和水洼', '晴', ['sunny-field', 'night-field']),
+      phrase('太热', 'sweaty-cat', '小猫满头大汗，正用爪子扇风', '天', ['rainy-field', 'night-field']),
+      phrase('天黑', 'night-field', '深蓝色天空下亮着星星', '太', ['sunny-field', 'rainy-field']),
     ],
-    story: '今天是晴天。太阳照着风车田，奶油猫觉得太热了。它坐到大树下，风把风车吹得转呀转。奶油猫喝了一口水，说：“现在不太热啦！”',
+    story: '今天是晴天，风车田里太热了。奶油猫撑起伞，去大树下喝水。它想起雨天凉凉的风，真盼着再凉快一点。等到天黑，风也凉了，它才慢慢走回家。',
   },
   {
     name: '森林站', cat: 'cocoa', sticker: '可可猫', at: [59.9, 68],
@@ -79,13 +81,13 @@ const town = [
     intro: '可可猫在树下发现一本书。树有树干和树根。把它们画下来，就可以认识两个新字。',
     words: [
       word('木', 'mù', 'tree / wood', 'tree', '找一找树干、树枝和向两边伸开的树根，再看它们在「木」里是什么样。', '中间像树干，两边像伸开的树根。', ['本', '末', '未']),
-      word('本', 'běn', 'root / measure for books', 'root', '在「木」的根部比出一小横。「一本书」的「本」就是它。', '找「木」的根部多一短横的字。', ['木', '末', '体']),
+      word('本', 'běn', 'root / measure for books', 'root', '在「木」的底下加一小横，就成了「一本书」的「本」。', '找靠近底下多了一小横的字。', ['木', '末', '体']),
     ],
     phrases: [
-      phrase('木门', '🚪', '一扇木门', '本'),
-      phrase('木桌', 'wood-table', '一张木桌', '门'),
-      phrase('本子', '📓', '一本有线的本子', '木'),
-      phrase('一本', '📘', '单独一本书', '木'),
+      phrase('木门', 'wood-door', '竖着的木板门，有一个圆把手', '本', ['wood-table', 'notebook']),
+      phrase('木桌', 'wood-table', '有四条腿的木纹桌子', '门', ['wood-door', 'picture-book']),
+      phrase('本子', 'notebook', '有横线的空白纸页和一支铅笔', '木', ['wood-door', 'wood-table']),
+      phrase('一本书', 'picture-book', '一本摊开的彩色图画故事书', '木', ['wood-door', 'wood-table']),
     ],
     story: '可可猫推开木门，走到木桌旁。桌上有一本书和一个小本子。它翻开本子，画下一棵大树。树有树干，也有深深的根。',
   },
@@ -95,13 +97,13 @@ const town = [
     intro: '莓莓猫要在彩虹店布置生日会。它请你看看，彩带在盒子的上面还是下面？',
     words: [
       word('上', 'shàng', 'up / on', 'above', '把一只手当成地面，另一只手放在它上面。看看短横在哪儿。', '小横在长横的上面。', ['下', '止', '土']),
-      word('下', 'xià', 'down / under', 'below', '把另一只手移到地面下面。看看「下」的短点在哪边。', '小点在长横的下面。', ['上', '不', '卜']),
+      word('下', 'xià', 'down / under', 'below', '把另一只手移到地面下面。看看「下」的那一点在哪里。', '那一点在长横的下面。', ['上', '不', '卜']),
     ],
     phrases: [
-      phrase('上面', 'above', '点在横线的上面', '下'),
-      phrase('下面', 'below', '点在横线的下面', '上'),
-      phrase('上楼', 'stairs-up', '箭头沿着楼梯向上', '下'),
-      phrase('下楼', 'stairs-down', '箭头沿着楼梯向下', '上'),
+      phrase('上面', 'above', '小球在盒子上方', '下', ['below', 'inside']),
+      phrase('下面', 'below', '小球在盒子下方', '上', ['above', 'inside']),
+      phrase('上楼', 'stairs-up', '箭头从楼梯低处指向高处', '下', ['stairs-down', 'inside']),
+      phrase('下楼', 'stairs-down', '箭头从楼梯高处指向低处', '上', ['stairs-up', 'inside']),
     ],
     story: '莓莓猫把彩带放在盒子上面，把纸星星藏在盒子下面。小猫们上楼来帮忙，布置好以后又一起下楼。生日会要开始啦！',
   },
@@ -114,12 +116,12 @@ const town = [
       word('月', 'yuè', 'moon / month', 'moon', '指着弯月看一看，再看看「月」字左边的长撇和里面的两横。', '找里面有两条短横，左边往外弯的字。', ['日', '目', '用']),
     ],
     phrases: [
-      phrase('日出', '🌅', '太阳从地平线升起', '月'),
-      phrase('日落', '🌇', '太阳落到房子后面', '月'),
-      phrase('月亮', '🌙', '夜空里的弯月', '日'),
-      phrase('月光', '🌕', '发亮的满月', '日'),
+      phrase('日出', 'sunrise', '山边的太阳，旁边的箭头朝上', '月', ['sunset', 'diary']),
+      phrase('日落', 'sunset', '山边的太阳，旁边的箭头朝下', '月', ['sunrise', 'diary']),
+      phrase('月亮', '🌙', '一轮弯月', '日', ['sunrise', 'diary']),
+      phrase('日记', 'diary', '带锁的粉色小册子和铅笔', '月', ['sunrise', '🌙']),
     ],
-    story: '芋圆猫早早起床看日出。太阳从山边慢慢升起来，把小镇照得暖暖的。日落以后，它跑上星星屋。月亮出来了，月光照在六只猫猫的尾巴上。',
+    story: '芋圆猫早早起床看日出。太阳从山边慢慢升起来，把小镇照得暖暖的。到了傍晚，太阳落下去，月亮升起来。芋圆猫把今天看到的日出和日落画进了日记。',
   },
 ];
 
@@ -127,34 +129,34 @@ const countryside = [
   {
     name: '石头山', cat: 'smoky', sticker: '灰灰猫', at: [16.7, 62],
     title: '山路上的圆石头', scene: '⛰️🪨',
-    intro: '灰灰猫带着地图去郊游。抬头是一座高山，脚边有一块圆石头。请你帮它找找，「山」和「石」长什么样。',
+    intro: '灰灰猫带着地图去郊游。抬头能看到高山，脚边有块圆石头。你知道「山」和「石」长什么样吗？',
     words: [
       word('山', 'shān', 'mountain', '⛰️', '伸出三根手指，让中间的手指最高。请孩子看看，像不像山的三个山峰。', '找中间最高、下面把三竖连在一起的字。', ['出', '凹', '巾']),
       word('石', 'shí', 'stone', '🪨', '先看上面的横和撇，再找下面方方的「口」。可以用手摸一摸身边的小石头。', '找上面一横一撇、下面有个方框的字。', ['右', '古', '百']),
     ],
     phrases: [
-      phrase('高山', '⛰️', '一座高高的山峰', '石'),
-      phrase('石头', '🪨', '一块圆圆的石头', '山'),
-      phrase('石桥', 'map-bridge', '小河上的石拱桥', '山'),
-      phrase('山路', 'map-path', '山脚下弯弯的小路', '石'),
+      phrase('高山', 'mountain', '山顶有白雪的高山峰', '石', ['round-stone', 'trail']),
+      phrase('石头', 'round-stone', '单独一块圆圆的灰色石头', '山', ['mountain', 'trail']),
+      phrase('石桥', 'stone-bridge', '跨过水面的灰色石拱', '山', ['mountain', 'round-stone']),
+      phrase('小路', 'trail', '草地间弯来弯去的一条小路', '石', ['round-stone', 'stone-bridge']),
     ],
-    story: '灰灰猫抬头看见一座高山。它沿着弯弯的山路走，看到一块圆石头。石头上画着一个箭头，指向河上的石桥。灰灰猫走到桥边，向对岸的海盐猫挥挥手。',
+    story: '灰灰猫抬头看见一座高山。它沿着弯弯的小路走，看到一块圆石头。石头上画着一个箭头，指向河上的石桥。灰灰猫走到桥边，向对岸的海盐猫挥挥手。',
   },
   {
     name: '溪边窑房', cat: 'salt', sticker: '海盐猫', at: [50, 64],
-    title: '桥边的水，窑里的火', scene: '💧🏺',
-    intro: '海盐猫在溪边等朋友。石桥下面是清清的水，窑房里有大人看顾的火。一个在流，一个在跳。',
+    title: '小河边看火车', scene: '💧🚂',
+    intro: '海盐猫在桥边等朋友。桥下的河水在流。窑房里，火苗在炉子里跳。远处还有一列火车要开过来。',
     words: [
       word('水', 'shuǐ', 'water', '💧', '用手指在空中画中间弯钩，再顺着两边比一比流动的水。最后一起读「水」。', '找有中间竖钩、两边像水流分开的字。', ['小', '永', '木']),
       word('火', 'huǒ', 'fire', '🔥', '看图找一找，火苗尖尖的，两侧各有一个小尖。请孩子在纸上画画火苗。', '找中间像「人」、上面有两笔小火苗的字。', ['人', '大', '灭']),
     ],
     phrases: [
-      phrase('河水', 'map-stream', '一条弯弯的小河', '火'),
-      phrase('水杯', 'water-glass', '装水的透明杯子', '火'),
-      phrase('火苗', '🔥', '一簇橙色的火苗', '水'),
-      phrase('火炉', 'map-kiln', '有烟囱的砖窑', '水'),
+      phrase('河水', 'map-stream', '小河里弯弯流动的蓝色水面', '火', ['🔥', '🚂']),
+      phrase('水杯', 'water-glass', '装着水的透明杯子', '火', ['🔥', '🚂']),
+      phrase('火苗', '🔥', '一簇橙色的火苗', '水', ['water-glass', 'map-stream']),
+      phrase('火车', '🚂', '有烟囱和车轮的车头', '水', ['water-glass', '🔥']),
     ],
-    story: '清清的河水从石桥下流过。海盐猫把水杯递给灰灰猫，两只猫在桥边喝水。窑房里有一个火炉，火苗在门里跳。猫奶奶说：“火炉很热，大家在门外看。”',
+    story: '清清的河水从石桥下流过。海盐猫带着水杯，和灰灰猫站在桥上。窑房里，火苗在炉子里跳。呜呜！一列火车开了过来。两只小猫一起向火车挥手。',
   },
   {
     name: '稻田小屋', cat: 'peach', sticker: '桃桃猫', at: [82, 64],
@@ -165,12 +167,12 @@ const countryside = [
       word('土', 'tǔ', 'soil', 'soil', '把长横当作地面，看看「土」的底横更长。可以和孩子一起指一指花盆里的泥土。', '找上横短、下横长，中间一竖的字。', ['士', '上', '工']),
     ],
     phrases: [
-      phrase('稻田', 'map-paddy', '一块长着金黄稻穗的田', '土'),
-      phrase('泥土', 'soil', '花盆里的棕色泥土', '田'),
-      phrase('土豆', '🥔', '一个圆圆的土豆', '田'),
-      phrase('土坡', 'soil-hill', '一座小小的泥土斜坡', '田'),
+      phrase('稻田', 'paddy', '一大片金黄的稻穗', '土', ['potato', 'mud-wall']),
+      phrase('泥土', 'earth', '松松的一堆棕色土块', '田', ['paddy', 'potato']),
+      phrase('土豆', 'potato', '一颗长圆形的棕黄色土豆', '田', ['paddy', 'mud-wall']),
+      phrase('土墙', 'mud-wall', '开着小窗的泥墙', '田', ['paddy', 'potato']),
     ],
-    story: '桃桃猫绕过稻田，跑上一个小土坡。它扒开松松的泥土，下面躺着三个圆圆的土豆。灰灰猫和海盐猫赶来帮忙。三只猫带着土豆回到小屋，笑着约好下次再来。',
+    story: '桃桃猫绕过稻田，来到小屋旁。小屋的土墙晒得暖暖的。它扒开松松的泥土，挖出三个圆圆的土豆。灰灰猫和海盐猫来帮忙。三只猫各拿一个土豆，笑着往回走。',
   },
 ];
 
@@ -182,3 +184,11 @@ export const lessons = volumes.flatMap((volume, index) =>
   volume.lessons.map((lesson) => ({ ...lesson, volume: index })));
 
 export const introTrack = ({ cat }) => `/audio/intro/${cat}.mp3`;
+export const storyTrack = ({ cat }) => `/audio/story/${cat}.mp3`;
+export const phraseTrack = ({ han }) =>
+  `/audio/words/${[...han].map((char) => char.codePointAt(0).toString(16)).join('-')}.mp3`;
+
+export const traceGuide = {
+  text: '先把手指放在亮点上。再沿着灰线，慢慢写。',
+  track: '/audio/instructions/trace.mp3',
+};

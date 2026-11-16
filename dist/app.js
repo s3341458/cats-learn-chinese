@@ -1,4 +1,4 @@
-import { introTrack, lessons, volumes } from './lessons.js';
+import { introTrack, lessons, phraseTrack, storyTrack, traceGuide, volumes } from './lessons.js';
 import { availability, dayAfter, dueCharacters, recordAnswer, save, state } from './progress.js';
 import { setupTracing } from './tracing.js';
 
@@ -14,6 +14,7 @@ const primary = (label, action, glyph = 'arrow') =>
 const secondary = (label, action, glyph) =>
   `<button class="secondary" data-action="${action}">${glyph ? icon(glyph) : ''}${label}</button>`;
 const statusLine = '<p id="speech-status" class="speech-status" role="status"></p>';
+const audioPlayer = '<audio preload="none" hidden></audio>';
 const stages = ['film', 'first', 'second', 'listen', 'build', 'match', 'story', 'stickers', 'drive'];
 const stageNames = ['故事开场', '第一个字', '第二个字', '听音找字', '拼词跟读', '看字选图', '猫猫绘本', '贴贴纸', '开车认字'];
 let run;
@@ -37,7 +38,7 @@ function notify(message) {
 
 function stopSpeech() {
   speechId++;
-  scene.querySelector('.film-narration')?.pause();
+  scene.querySelector('audio')?.pause();
   window.speechSynthesis?.cancel();
 }
 
@@ -160,28 +161,42 @@ function showGuide() {
       <tbody>${review.map(([han, item]) => `<tr><th>${han}</th><td aria-label="${item.box} / 5">${'●'.repeat(item.box)}${'○'.repeat(5 - item.box)}</td>
         <td>${item.due <= dayAfter() ? '到期' : item.due}</td><td>${item.right} / ${item.tries}</td></tr>`).join('')}</tbody></table></div>`
         : '<p>做过听音、拼词或选图后，就会出现记录。</p>'}
-      <p>进度和贴纸保存在此浏览器。朗读使用设备的普通话语音。</p>
+      <p>进度和贴纸保存在此浏览器。故事、词语和写字提示使用录音，单个汉字使用设备的普通话语音。</p>
     </div>`, 'guide');
 }
 
 const artSymbols = {
   person: '🧍', mouth: '😮', big: '🙆', small: '🤏', sky: '🌤️',
-  too: '🥵', tree: '🌳', root: '🌱', sun: '☀️', moon: '🌙', 'wood-table': '🪵',
-  'stairs-up': '↗', 'stairs-down': '↘',
+  too: '🥵', tree: '🌳', root: '🌱', sun: '☀️', moon: '🌙',
 };
 
+const artSheets = [
+  ['cards-town', ['adult', 'child', 'doorway', 'yawn', 'sunny-field', 'rainy-field', 'night-field', 'sweaty-cat', 'wood-door', 'wood-table', 'notebook', 'picture-book']],
+  ['cards-outdoors', ['fish', 'kitten', 'gate', 'diary', 'mountain', 'round-stone', 'stone-bridge', 'trail', 'paddy', 'earth', 'potato', 'mud-wall']],
+];
+const pictures = new Map(artSheets.flatMap(([sheet, items]) => items.map((item, index) =>
+  [item, `<span class="atlas-picture" aria-hidden="true" style="--sheet:url('/assets/${sheet}.jpg');--column:${index % 4 * 100 / 3}%;--row:${Math.floor(index / 4) * 50}%"></span>`],
+)));
+const insideOption = { art: 'inside', label: '小球在盒子里面' };
+
 function art(value, lesson) {
+  if (pictures.has(value)) return pictures.get(value);
   if (value === 'cat') return cat(lesson.cat);
-  if (value.startsWith('map-')) return `<span class="map-art ${value}" aria-hidden="true"></span>`;
-  if (['field-grid', 'soil', 'soil-hill', 'water-glass'].includes(value)) {
+  if (value === 'map-stream') return '<span class="map-art map-stream" aria-hidden="true"></span>';
+  if (['field-grid', 'soil', 'water-glass'].includes(value)) {
     return `<span class="object-art ${value}" aria-hidden="true"></span>`;
   }
-  if (value === 'above' || value === 'below') return `<span class="position-art ${value}" aria-hidden="true"><i></i><i></i></span>`;
-  if (value === 'big-small') return '<span class="size-art" aria-hidden="true">● <small>●</small></span>';
-  if (value === 'big-fish' || value === 'small-fish') return `<span class="${value}" aria-hidden="true">🐟</span>`;
-  if (value === 'wood-table') return '<span class="wood-table" aria-hidden="true"><i></i><i></i><i></i></span>';
+  if (['above', 'below', 'inside'].includes(value)) {
+    return `<span class="position-art ${value}" aria-hidden="true"><i></i><i></i></span>`;
+  }
+  if (value === 'big-fish' || value === 'small-fish') {
+    return `<span class="fish-scene ${value}" aria-hidden="true">${pictures.get('fish')}</span>`;
+  }
   if (value === 'stairs-up' || value === 'stairs-down') {
-    return `<span class="stairs-art" aria-hidden="true"><i></i>${artSymbols[value]}</span>`;
+    return `<span class="stairs-art" aria-hidden="true"><i></i><b>${value === 'stairs-up' ? '↗' : '↙'}</b></span>`;
+  }
+  if (value === 'sunrise' || value === 'sunset') {
+    return `<span class="solar-art ${value}" aria-hidden="true"><i></i><i></i><b>${value === 'sunrise' ? '↑' : '↓'}</b></span>`;
   }
   return `<span class="emoji-art" aria-hidden="true">${artSymbols[value] ?? value}</span>`;
 }
@@ -211,7 +226,8 @@ function initializeRound() {
     const item = currentPhrase();
     run.choices = shuffle([...new Set([...item.han, item.extra])]);
   } else if (run.stage === 'match') {
-    run.choices = shuffle([run.round, ...[0, 1, 2, 3].filter((i) => i !== run.round).slice(0, 2)]);
+    const item = currentPhrase();
+    run.choices = shuffle([item.art, ...item.alternatives]);
   } else if (run.stage === 'drive' && run.round < 6) {
     const item = roadQuestions()[run.round];
     run.choices = shuffle([item.han, ...item.alternatives]);
@@ -273,7 +289,6 @@ function resetRound() {
 }
 
 function go(stage) {
-  stopSpeech();
   resetRound();
   Object.assign(run, { stage, round: 0, wordMode: 'picture', stroke: 0 });
   run.visited = Math.max(run.visited, stages.indexOf(stage));
@@ -321,37 +336,47 @@ function showFilm() {
 }
 
 function playFilm() {
-  stopSpeech();
-  const currentId = speechId;
-  const lesson = currentLesson();
   const frame = scene.querySelector('.film-frame');
-  const clip = scene.querySelector('.film-narration');
-  const status = $('speech-status');
   const animate = () => {
     frame.classList.remove('playing');
     requestAnimationFrame(() => {
       if (frame.isConnected) frame.classList.add('playing');
     });
   };
+  const lesson = currentLesson();
+  playSceneAudio(introTrack(lesson), lesson.intro, '播放开场', { onStart: animate });
+}
 
+function playSceneAudio(track, text, replayLabel, { hint = '', onStart } = {}) {
+  stopSpeech();
+  const currentId = speechId;
+  const clip = scene.querySelector('audio');
+  const status = $('speech-status');
   status.textContent = '';
   if (!state.sound) {
-    animate();
+    status.textContent = hint;
+    onStart?.();
     return;
   }
 
+  if (clip.getAttribute('src') !== track) clip.src = track;
   clip.currentTime = 0;
   clip.play().then(() => {
-    if (currentId === speechId) animate();
+    if (currentId === speechId) onStart?.();
   }).catch((error) => {
     if (currentId !== speechId) return;
-    animate();
+    onStart?.();
     if (error.name === 'NotAllowedError') {
-      status.textContent = '点「播放开场」听旁白。';
+      status.textContent = `点「${replayLabel}」听一遍。`;
     } else {
-      speak(lesson.intro);
+      speak(text, hint);
     }
   });
+}
+
+function playTraceGuide() {
+  if (state.sound) run.traceGuidePlayed = true;
+  playSceneAudio(traceGuide.track, traceGuide.text, '听写字提示');
 }
 
 function traceCard(word) {
@@ -363,18 +388,24 @@ function traceCard(word) {
   </svg>`;
 }
 
+function traceProgress(stroke, total) {
+  return stroke >= total ? '写好啦！' : `第 ${stroke + 1} 笔，共 ${total} 笔`;
+}
+
 function showWord() {
   const word = currentWord();
   const lesson = currentLesson();
   const mode = run.wordMode;
   if (mode === 'trace') {
     const done = run.stroke >= word.strokes.length;
-    return chapter(`跟着笔顺写「${word.han}」`, `
+    return chapter(`跟猫猫写「${word.han}」`, `
       ${traceCard(word)}
-      <p class="phase-copy" id="trace-count" role="status">${done ? '写好啦！' : `第 ${run.stroke + 1} 笔 / 共 ${word.strokes.length} 笔，从圆点开始。`}</p>
+      <audio class="trace-narration" src="${traceGuide.track}" preload="none" hidden></audio>
+      <p class="phase-copy" id="trace-count" role="status">${traceProgress(run.stroke, word.strokes.length)}</p>
+      <p class="phase-copy" id="trace-instruction" ${done ? 'hidden' : ''}>${traceGuide.text}</p>
       <div class="panel-actions" id="trace-actions">${done
-        ? primary('继续', 'advance') : `${secondary('演示这一笔', 'demo-stroke')}${secondary('跳过描红', 'advance', 'arrow')}`}</div>`,
-      '请孩子从亮点开始，顺着灰色笔画慢慢描。可以先看一笔示范，也可以跳过。');
+        ? primary('继续', 'advance') : `${secondary('听写字提示', 'hear-trace', 'sound')}${secondary('看示范', 'demo-stroke')}${secondary('跳过描红', 'advance', 'arrow')}`}</div>`,
+      '请让孩子照自己的速度写。需要帮忙时，可以先看这一笔怎么写。');
   }
   const revealed = mode === 'glyph';
   return chapter(revealed ? `一起读「${word.han}」` : '点图，看看会变成什么字', `
@@ -399,11 +430,11 @@ function quizFeedback(label) {
 
 function showListening() {
   const question = run.questions[run.round];
-  return chapter('听猫猫说，点出那个字', `
+  return chapter('听一听，找一找', `
     ${rounds(run.round, run.questions.length)}
-    ${secondary('听题', 'hear-question', 'sound')}
+    ${secondary('听这个字', 'hear-question', 'sound')}
     <div class="tile-row">${run.choices.map((han, i) => tile(han, i)).join('')}</div>
-    ${quizFeedback('听到以后再选。')}
+    ${quizFeedback('听一听，然后点出你听到的字。')}
     <button class="text-button" data-action="show-hint">用拼音提示</button>`,
     `先听读音，再认字形。答错可以继续试。需要帮忙时，想一想：${question.hint}`);
 }
@@ -411,7 +442,8 @@ function showListening() {
 function showBuild() {
   const item = currentPhrase();
   const ready = run.slots === item.han;
-  return chapter(ready ? '拼好啦，读给大人听' : '按顺序拼出词语', `
+  return chapter(ready ? '拼好啦，读一读' : '听词语，按顺序点字', `
+    ${audioPlayer}
     ${rounds(run.round, 3)}
     <div class="build-board">
       <div class="art-card" role="img" aria-label="${item.label}">${art(item.art, currentLesson())}</div>
@@ -419,24 +451,26 @@ function showBuild() {
     </div>
     ${ready ? `<div class="panel-actions">${secondary('听这个词', 'hear-phrase', 'sound')}${primary('读过了', 'next-item', 'check')}</div>`
       : `<div class="tile-row small-tiles">${run.choices.map((han, i) => tile(han, i)).join('')}</div>
-        <div class="panel-actions">${secondary('听要拼的词', 'hear-phrase', 'sound')}${run.slots ? secondary('重新拼', 'clear-build') : ''}</div>
-        <p id="feedback" class="phase-copy" role="status">先听听词语，再点下面的字。</p>`}`,
-    ready ? '请孩子把拼好的词完整读一遍。读完以后，点右边的勾。' :
-      '请孩子听完整的词，再按读音顺序点字卡。点错一个字可以再选。');
+        <div class="panel-actions">${secondary('听这个词', 'hear-phrase', 'sound')}${run.slots ? secondary('重新拼', 'clear-build') : ''}</div>
+        <p id="feedback" class="phase-copy" role="status">听完整个词，再从第一个字开始点。</p>`}`,
+    ready ? '请孩子把拼好的词读一遍，读完点「读过了」。' :
+      '可以再听一遍。请孩子想想先听到了哪个字，再听到了哪个字。');
 }
 
 function showMatch() {
   const item = currentPhrase();
   const lesson = currentLesson();
-  return chapter('读词语，选图画', `
+  const positionHint = ['above', 'below'].includes(item.art) ? '看小球在盒子的哪边。' : '哪张图表示这个词？';
+  return chapter('读一读，选图片', `
     ${rounds(run.round, lesson.phrases.length)}
     <div class="read-card">${item.han}</div>
-    <div class="tile-row picture-tiles">${run.choices.map((index, i) => {
-      const option = lesson.phrases[index];
+    <p class="phase-copy">${positionHint}</p>
+    <div class="tile-row picture-tiles">${run.choices.map((value, i) => {
+      const option = value === 'inside' ? insideOption : lesson.phrases.find(({ art }) => art === value);
       return `<button class="tile" data-pick="${i}" aria-label="${option.label}">${art(option.art, lesson)}</button>`;
     }).join('')}</div>
-    ${quizFeedback('哪个图和上面的词语一样？')}`,
-    '这一幕没有提示音。让孩子自己读上面的词，再点符合意思的图。');
+    ${quizFeedback('')}`,
+    '让孩子先自己读卡片，再选图。卡住了，可以把词读一遍给孩子听。');
 }
 
 function storyText(lesson) {
@@ -448,6 +482,7 @@ function storyText(lesson) {
 function showStory() {
   const lesson = currentLesson();
   return chapter('一起读绘本', `
+    ${audioPlayer}
     <div class="spread">
       <figure class="storybook-art" ${chapterLandscape(lesson)}>${sprite('car')}<span>${art(lesson.scene, lesson)}</span></figure>
       <article class="storybook-text"><h3>${lesson.title}</h3><p>${storyText(lesson)}</p></article>
@@ -496,14 +531,15 @@ function showDrive() {
   const label = ['左车道', '中间车道', '右车道'];
   const bonus = run.driving && !run.starred.includes(run.round);
   return chapter('开猫猫小车，找到路牌', `
+    ${audioPlayer}
     ${rounds(run.round, 6)}
     <div class="road ${run.driving && !run.fast ? 'moving' : ''}" id="road">
       ${run.choices.map((han, i) => `<button data-lane="${i}" class="lane" aria-label="${label[i]}：${han}"
-        ${!run.driving || run.hit ? 'disabled' : ''}><span class="road-sign">${han}</span></button>`).join('')}
+        ${!run.driving || run.hit ? 'disabled' : ''}><span class="road-sign ${han.length > 2 ? 'is-long' : ''}">${han}</span></button>`).join('')}
       <span class="road-car" style="--lane:${run.lane}">${sprite('car')}</span>
       ${bonus && !run.fast ? `<span class="road-treat" style="--lane:${run.bonusLane}" aria-hidden="true">★</span>` : ''}
     </div>
-    <p class="phase-copy" id="road-status" role="status">${run.driving ? '听到路牌后，点它所在的车道。' : '按出发，听猫猫说要找哪张路牌。'} · <span id="road-stars">★ ${run.starred.length}</span></p>
+    <p class="phase-copy" id="road-status" role="status">${run.driving ? '听清要找的字或词，再点它所在的车道。' : '点「出发」，听听要找哪个字或词。'} · <span id="road-stars">★ ${run.starred.length}</span></p>
     <div class="panel-actions">${run.driving ? secondary('再听路牌', 'hear-road', 'sound') : primary('出发', 'start-drive')}
       ${secondary(run.fast ? '切换为行驶模式' : '切换为静止练习', 'drive-mode')}</div>`,
     '点车道转向。开过星星可以收集它，选对路牌才能到终点。需要多一点时间时，可以切换到静止练习。');
@@ -540,6 +576,7 @@ const renderers = {
 };
 
 function renderScene(focus = true) {
+  stopSpeech();
   clearTimeout(timer);
   clearTimeout(bonusTimer);
   run.missed ??= new Set();
@@ -557,10 +594,10 @@ function renderScene(focus = true) {
     cleanupTracing = setupTracing($('trace'), Math.min(run.stroke, word.strokes.length), (count) => {
       run.stroke = count;
       checkpoint();
-      if (count < word.strokes.length) {
-        $('trace-count').textContent = `第 ${count + 1} 笔 / 共 ${word.strokes.length} 笔，从圆点开始。`;
-      } else {
-        $('trace-count').textContent = '写好啦！';
+      $('trace-count').textContent = traceProgress(count, word.strokes.length);
+      if (count === word.strokes.length) {
+        stopSpeech();
+        $('trace-instruction').hidden = true;
         $('trace-actions').innerHTML = primary('继续', 'advance');
         $('trace-actions').querySelector('button').focus({ preventScroll: true });
       }
@@ -586,12 +623,12 @@ function nextItem() {
 
 function hearQuestion() {
   const word = run.questions[run.round];
-  speak(`请找出读作「${word.han}」的字。`, `听音提示：${word.py}`);
+  speak(word.han, `听音提示：${word.py}`);
 }
 
 function hearPhrase() {
   const phrase = currentPhrase();
-  speak(phrase.han, `请大人领读「${phrase.han}」。`);
+  playSceneAudio(phraseTrack(phrase), phrase.han, '听这个词', { hint: `请大人读一遍「${phrase.han}」。` });
 }
 
 function choose(index, button) {
@@ -605,7 +642,7 @@ function choose(index, button) {
     if (choice !== phrase.han[run.slots.length]) {
       run.missed.add(index);
       button.classList.add('miss');
-      $('feedback').textContent = '这个字的位置不对，按词语的读音再试。';
+      $('feedback').textContent = '这个字还没轮到。再听一遍，找下一个字。';
       return;
     }
     run.slots += choice;
@@ -615,11 +652,11 @@ function choose(index, button) {
     return;
   }
 
-  const target = stage === 'listen' ? run.questions[run.round].han : run.round;
+  const target = stage === 'listen' ? run.questions[run.round].han : currentPhrase().art;
   if (choice !== target) {
     run.missed.add(index);
     button.classList.add('miss');
-    $('feedback').textContent = stage === 'listen' ? '这个字不一样。再听一遍，试试别的字。' : '再读一遍词语，找找另一张图。';
+    $('feedback').textContent = stage === 'listen' ? '再听一遍，看看另一个字。' : '再读一遍这个词，找一找它说的是哪张图。';
     return;
   }
   run.hit = true;
@@ -642,7 +679,9 @@ function placeSticker(kind) {
 
 function hearRoad() {
   const item = roadQuestions()[run.round];
-  if (item) speak(`开到「${item.han}」的路牌。`, `找到路牌：${item.py ?? item.han}`);
+  if (!item) return;
+  if (item.py) speak(item.han, `听音提示：${item.py}`);
+  else playSceneAudio(phraseTrack(item), item.han, '再听路牌', { hint: `找这块路牌：${item.han}` });
 }
 
 function startDrive() {
@@ -845,6 +884,10 @@ scene.addEventListener('click', (event) => {
       checkpoint();
       renderScene();
       if (run.wordMode === 'glyph') speak(currentWord().han, currentWord().py);
+      else if (!run.traceGuidePlayed && run.stroke < currentWord().strokes.length) playTraceGuide();
+      break;
+    case 'hear-trace':
+      playTraceGuide();
       break;
     case 'demo-stroke':
       cleanupTracing?.();
@@ -869,7 +912,7 @@ scene.addEventListener('click', (event) => {
       renderScene();
       break;
     case 'read-story':
-      speak(currentLesson().story);
+      playSceneAudio(storyTrack(currentLesson()), currentLesson().story, '朗读整页');
       break;
     case 'start-drive':
       startDrive();
