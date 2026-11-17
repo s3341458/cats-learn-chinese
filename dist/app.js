@@ -1,4 +1,4 @@
-import { introTrack, lessons, phraseTrack, storyTrack, traceGuide, volumes } from './lessons.js';
+import { introTrack, lessons, storyTrack, traceGuide, volumes, wordTrack } from './lessons.js';
 import { availability, dayAfter, dueCharacters, recordAnswer, save, state } from './progress.js';
 import { setupTracing } from './tracing.js';
 
@@ -16,10 +16,25 @@ const secondary = (label, action, glyph) =>
 const statusLine = '<p id="speech-status" class="speech-status" role="status"></p>';
 const audioPlayer = '<audio preload="none" hidden></audio>';
 const stages = ['film', 'first', 'second', 'listen', 'build', 'match', 'story', 'stickers', 'drive'];
-const stageNames = ['故事开场', '第一个字', '第二个字', '听音找字', '拼词跟读', '看字选图', '猫猫绘本', '贴贴纸', '开车认字'];
+const stageNames = [
+  ['Story intro', '故事开场'], ['First character', '第一个字'], ['Second character', '第二个字'],
+  ['Listen and find', '听音找字'], ['Build a word', '拼词跟读'], ['Match the picture', '看字选图'],
+  ['Read the story', '猫猫绘本'], ['Place stickers', '贴贴纸'], ['Find road signs', '开车认字'],
+];
+const localize = (english, chinese) => state.language === 'zh-Hans' ? chinese : english;
+const lessonName = (lesson) => localize(lesson.nameEn, lesson.name);
+const stickerName = (lesson) => localize(lesson.stickerEn, lesson.sticker);
+const volumeName = (volume) => localize(volume.titleEn, volume.title);
+const stopName = (index) => localize(`Stop ${index + 1}`, `第 ${index + 1} 站`);
+const hanzi = (text) => `<span lang="zh-Hans">${text}</span>`;
+const characterLessons = new Map(lessons.flatMap(({ words }) => words.map((word) => [word.han, word])));
+const chromeText = [...document.querySelectorAll('[data-zh]')].map((element) =>
+  [element, element.textContent, element.dataset.zh]);
+const chromeLabels = [...document.querySelectorAll('[data-zh-label]')].map((element) =>
+  [element, element.getAttribute('aria-label'), element.dataset.zhLabel]);
+const languageControls = document.querySelectorAll('.language-select');
 let run;
 let timer;
-let bonusTimer;
 let noticeTimer;
 let parentTimer;
 let parentHeld = false;
@@ -42,15 +57,17 @@ function stopSpeech() {
   window.speechSynthesis?.cancel();
 }
 
-function speak(text, hint = '') {
+function speak(text, hint = '', onFailure) {
   stopSpeech();
   const currentId = speechId;
   const fallback = () => {
     if (currentId !== speechId) return;
     const status = $('speech-status');
-    if (status) status.textContent = hint || '暂时没有普通话发音，可以请家长一起读。';
+    if (status) status.textContent = hint || localize('Mandarin audio is unavailable. Ask a grown-up to read with you.', '暂时没有普通话发音，可以请家长一起读。');
   };
-  if (!state.sound || !('speechSynthesis' in window)) return fallback();
+  if (!state.sound) return fallback();
+  const tryRecording = onFailure ?? fallback;
+  if (!('speechSynthesis' in window)) return tryRecording();
 
   const speech = window.speechSynthesis;
   const utterance = new SpeechSynthesisUtterance(text);
@@ -58,16 +75,23 @@ function speak(text, hint = '') {
   utterance.rate = 0.78;
   const voices = speech.getVoices();
   const voice = voices.find((item) => /^zh[-_]CN$/i.test(item.lang)) ||
-    voices.find((item) => /^cmn(?:-|$)/i.test(item.lang)) ||
-    voices.find((item) => /^zh(?![-_]HK)/i.test(item.lang));
-  if (voice) utterance.voice = voice;
-  if (voices.length && !voice) return fallback();
+    voices.find((item) => /^cmn(?:[-_]|$)/i.test(item.lang)) ||
+    voices.find((item) => /^zh(?![-_](?:HK|MO|yue)(?:[-_]|$))/i.test(item.lang));
+  if (!voice) return tryRecording();
+  utterance.voice = voice;
   utterance.onerror = (event) => {
-    if (!['canceled', 'interrupted'].includes(event.error)) fallback();
+    if (currentId === speechId && !['canceled', 'interrupted'].includes(event.error)) tryRecording();
   };
   const status = $('speech-status');
   if (status) status.textContent = '';
   speech.speak(utterance);
+}
+
+function updateLanguage() {
+  document.documentElement.lang = state.language;
+  for (const [element, english, chinese] of chromeText) element.textContent = localize(english, chinese);
+  for (const [element, english, chinese] of chromeLabels) element.setAttribute('aria-label', localize(english, chinese));
+  for (const select of languageControls) select.value = state.language;
 }
 
 function showHome(opened) {
@@ -81,38 +105,41 @@ function renderMap() {
   const volume = volumes[activeVolume];
   const currentVolume = lessons[nextStop()].volume;
   $('album-count').textContent = `${count} / ${lessons.length}`;
-  $('progress-count').textContent = `${count} / ${lessons.length} 关`;
+  $('progress-count').textContent = `${count} / ${lessons.length}`;
   $('course-progress').setAttribute('aria-valuemax', lessons.length);
   $('course-progress').setAttribute('aria-valuenow', count);
   $('progress-fill').style.width = `${count / lessons.length * 100}%`;
   $('sound').setAttribute('aria-pressed', state.sound);
   $('sound').innerHTML = icon(state.sound ? 'sound' : 'muted');
-  let tip = '点亮的站点可以开始。每天读一站。';
-  if (count === lessons.length) tip = '所有故事都读完啦！点任意一站可以重读。';
-  else if (activeVolume < currentVolume) tip = `这册已读完。翻到「${volumes[currentVolume].title}」继续。`;
-  else if (activeVolume > currentVolume) tip = `先完成「${volumes[currentVolume].title}」，再来这一册。`;
-  else if (availability(count) === 'tomorrow') tip = '今天的故事读完啦，下一站明天开放。';
+  const nextVolume = volumeName(volumes[currentVolume]);
+  let tip = localize('Tap a highlighted stop. Finish it to open the next one.', '点亮的站点可以开始。完成一站就会开放下一站。');
+  if (count === lessons.length) tip = localize('All stories finished! Tap any stop to read it again.', '所有故事都读完啦！点任意一站可以重读。');
+  else if (activeVolume < currentVolume) tip = localize(`This book is finished. Open ${nextVolume} to keep going.`, `这册已读完。翻到「${nextVolume}」继续。`);
+  else if (activeVolume > currentVolume) tip = localize(`Finish ${nextVolume} to open this book.`, `先完成「${nextVolume}」，再来这一册。`);
   $('map-tip').textContent = tip;
   $('routes').innerHTML = volumes.map((route, index) => {
     const done = lessons.slice(0, count).filter((lesson) => lesson.volume === index).length;
     return `<button id="route-${index}" data-route="${index}" aria-pressed="${activeVolume === index}" aria-controls="map-section">
-      ${route.title}<span>${done} / ${route.lessons.length}</span></button>`;
+      ${volumeName(route)}<span>${done} / ${route.lessons.length}</span></button>`;
   }).join('');
   if ($('map-art').getAttribute('src') !== volume.image) $('map-art').src = volume.image;
-  $('map-name').textContent = volume.title;
-  $('map-section').setAttribute('aria-label', `${volume.title}地图`);
+  $('map-name').textContent = volumeName(volume);
+  $('map-section').setAttribute('aria-label', localize(`${volumeName(volume)} map`, `${volumeName(volume)}地图`));
   $('stops').innerHTML = lessons.map((lesson, i) => {
     if (lesson.volume !== activeVolume) return '';
     const status = availability(i);
     const resumed = status === 'open' && state.resume?.index === i;
-    const label = { done: '已完成，可以重读', open: resumed ? '继续' : '开始', tomorrow: '明天开放', locked: '未解锁' }[status];
+    const label = {
+      done: localize('completed, play again', '已完成，可以重读'),
+      open: resumed ? localize('resume', '继续') : localize('start', '开始'),
+      locked: localize('locked', '未解锁'),
+    }[status];
     const style = status === 'open' ? 'current' : status;
-    const badge = status === 'done' ? icon('check') :
-      status === 'tomorrow' ? '<span aria-hidden="true">☾</span>' : icon('lock');
+    const badge = icon(status === 'done' ? 'check' : 'lock');
     return `<button class="stop is-${style}" id="stop-${i}" data-stop="${i}"
-      aria-label="第 ${i + 1} 站：${lesson.name}，${label}" style="--x:${lesson.at[0]}%;--y:${lesson.at[1]}%">
+      aria-label="${stopName(i)} · ${lessonName(lesson)} · ${label}" style="--x:${lesson.at[0]}%;--y:${lesson.at[1]}%">
       <span class="stop-disc">${i + 1}${status === 'open' ? '' : `<span class="stop-lock">${badge}</span>`}</span>
-      <span class="stop-label">${lesson.name}${status === 'open' ? `<span class="stop-tag">${resumed ? '继续' : '出发'}</span>` : ''}</span>
+      <span class="stop-label">${lessonName(lesson)}${status === 'open' ? `<span class="stop-tag">${resumed ? localize('Resume', '继续') : localize('Go', '出发')}</span>` : ''}</span>
     </button>`;
   }).join('');
 }
@@ -121,7 +148,7 @@ function showPanel(title, content, returnId) {
   const opening = !panel.open;
   if (opening) panelReturn = returnId;
   $('panel-body').innerHTML = `<header class="panel-head"><h2 id="panel-title" tabindex="-1">${title}</h2>
-    <button class="close" data-action="close-panel" aria-label="关闭">×</button></header>
+    <button class="close" data-action="close-panel" aria-label="${localize('Close', '关闭')}">×</button></header>
     <div class="panel-content">${content}</div>`;
   if (opening) panel.showModal();
   $('panel-title').focus({ preventScroll: true });
@@ -129,39 +156,42 @@ function showPanel(title, content, returnId) {
 }
 
 function showAlbum() {
-  showPanel('猫猫贴纸册', `
-    <p class="reward-copy">已贴上 ${state.completed.length} / ${lessons.length} 张猫咪贴纸。${state.completed.length === lessons.length ? '猫猫都到齐啦！' : ''}</p>
+  showPanel(localize('Sticker book', '猫猫贴纸册'), `
+    <p class="reward-copy">${localize(
+      `${state.completed.length} of ${lessons.length} cat stickers collected.`,
+      `已贴上 ${state.completed.length} / ${lessons.length} 张猫咪贴纸。`,
+    )}</p>
     <ul class="sticker-grid">${lessons.map((lesson, i) => {
       const owned = i < state.completed.length;
       return `<li class="sticker${owned ? '' : ' is-empty'}">
         ${owned ? cat(lesson.cat) : icon('lock')}
-        <b>${owned ? lesson.sticker : '待收集'}</b><small>${lesson.name}</small>
+        <b>${owned ? stickerName(lesson) : localize('To collect', '待收集')}</b><small>${lessonName(lesson)}</small>
       </li>`;
     }).join('')}</ul>`, 'album');
 }
 
 function showGuide() {
   const review = Object.entries(state.review);
-  const next = state.completed.length;
-  showPanel('家长角', `
+  showPanel(localize('Grown-ups', '家长角'), `
     <div class="parent-controls">
-      <p>前一站完成后，下一站隔天开放。想在同一天继续，可以在这里提前开放。</p>
+      <p>${localize('Each stop opens as soon as you finish the one before it.', '完成一站后，下一站立即开放。')}</p>
       <ol class="parent-days">${lessons.map((lesson, index) => {
         const status = availability(index);
         const caption = status === 'done' ? state.completed[index] :
-          { open: '可开始', tomorrow: '明天开放', locked: '等待前一站' }[status];
-        const action = status === 'tomorrow'
-          ? `<button class="secondary" data-action="early">提前开放第 ${next + 1} 站</button>`
-          : status === 'done' ? `<button class="secondary" data-replay="${index}">重读</button>` : '';
-        return `<li><b>${lesson.name} · ${lesson.words.map(({ han }) => han).join('、')}</b><span>${caption}</span>${action}</li>`;
+          { open: localize('Ready', '可开始'), locked: localize('Finish the previous stop', '等待前一站') }[status];
+        const action = status === 'done'
+          ? `<button class="secondary" data-replay="${index}">${localize('Play again', '重读')}</button>` : '';
+        return `<li><b>${lessonName(lesson)} · ${hanzi(lesson.words.map(({ han }) => han).join('、'))}</b><span>${caption}</span>${action}</li>`;
       }).join('')}</ol>
-      <h3>认读记录</h3>
-      <p>同一个字或词每天最多调整一次复习间隔。该复习的汉字会穿插到之后的听音题。</p>
-      ${review.length ? `<div class="review-wrap"><table><thead><tr><th>字词</th><th>熟悉度</th><th>下次复习</th><th>一次答对</th></tr></thead>
-      <tbody>${review.map(([han, item]) => `<tr><th>${han}</th><td aria-label="${item.box} / 5">${'●'.repeat(item.box)}${'○'.repeat(5 - item.box)}</td>
-        <td>${item.due <= dayAfter() ? '到期' : item.due}</td><td>${item.right} / ${item.tries}</td></tr>`).join('')}</tbody></table></div>`
-        : '<p>做过听音、拼词或选图后，就会出现记录。</p>'}
-      <p>进度和贴纸保存在此浏览器。故事、词语和写字提示使用录音，单个汉字使用设备的普通话语音。</p>
+      <h3>${localize('Reading progress', '认读记录')}</h3>
+      <p>${localize('Characters due for review can appear in later listening activities.', '该复习的汉字会穿插到之后的听音题。')}</p>
+      ${review.length ? `<div class="review-wrap"><table><thead><tr>
+        <th>${localize('Character or word', '字词')}</th><th>${localize('Familiarity', '熟悉度')}</th>
+        <th>${localize('Next review', '下次复习')}</th><th>${localize('First try', '一次答对')}</th></tr></thead>
+      <tbody>${review.map(([han, item]) => `<tr><th lang="zh-Hans">${han}</th><td aria-label="${item.box} / 5">${'●'.repeat(item.box)}${'○'.repeat(5 - item.box)}</td>
+        <td>${item.due <= dayAfter() ? localize('Due', '到期') : item.due}</td><td>${item.right} / ${item.tries}</td></tr>`).join('')}</tbody></table></div>`
+        : `<p>${localize('Your results appear here after a listening, word-building, or picture activity.', '做过听音、拼词或选图后，就会出现记录。')}</p>`}
+      <p>${localize('Progress and stickers are saved in this browser. Lesson audio is always in Mandarin.', '进度和贴纸保存在此浏览器。课程语音始终使用普通话。')}</p>
     </div>`, 'guide');
 }
 
@@ -177,7 +207,7 @@ const artSheets = [
 const pictures = new Map(artSheets.flatMap(([sheet, items]) => items.map((item, index) =>
   [item, `<span class="atlas-picture" aria-hidden="true" style="--sheet:url('/assets/${sheet}.jpg');--column:${index % 4 * 100 / 3}%;--row:${Math.floor(index / 4) * 50}%"></span>`],
 )));
-const insideOption = { art: 'inside', label: '小球在盒子里面' };
+const insideOption = { art: 'inside', label: ['A ball inside a box', '小球在盒子里面'] };
 
 function art(value, lesson) {
   if (pictures.has(value)) return pictures.get(value);
@@ -236,8 +266,7 @@ function initializeRound() {
 
 function begin(index, resume = true) {
   const status = availability(index);
-  if (status === 'tomorrow') return notify('这一站明天开放。家长可以在「家长角」提前开放。');
-  if (status === 'locked') return notify('先完成前面的站点，再来这里喵！');
+  if (status === 'locked') return notify(localize('Finish the previous stops to open this one.', '先完成前面的站点，再来这里喵！'));
 
   const lesson = lessons[index];
   const [first, second] = lesson.words;
@@ -250,7 +279,7 @@ function begin(index, resume = true) {
   const stage = stages.includes(saved?.stage) ? saved.stage : 'film';
   run = {
     index, stage, questions, reviewWords, visited: stages.indexOf(stage), round: 0,
-    lane: 1, bonusLane: 0, starred: [], fast: matchMedia('(prefers-reduced-motion: reduce)').matches,
+    lane: 1, starred: [], stationary: matchMedia('(prefers-reduced-motion: reduce)').matches,
   };
   if (saved) {
     const limit = { listen: questions.length - 1, build: 2, match: 3, drive: 6 }[stage] ?? 0;
@@ -265,7 +294,7 @@ function begin(index, resume = true) {
   journey.showModal();
   checkpoint();
   renderScene();
-  if (run.stage === 'film') playFilm();
+  playStageCue();
 }
 
 function checkpoint() {
@@ -284,7 +313,6 @@ function resetRound() {
   run.hit = false;
   run.slots = '';
   run.driving = false;
-  run.selected = false;
   run.lane = 1;
 }
 
@@ -294,6 +322,7 @@ function go(stage) {
   run.visited = Math.max(run.visited, stages.indexOf(stage));
   checkpoint();
   renderScene();
+  playStageCue();
 }
 
 function advance() {
@@ -301,7 +330,7 @@ function advance() {
 }
 
 function rounds(done, total) {
-  return `<div class="rounds" aria-label="已完成 ${done} / ${total} 个小任务">
+  return `<div class="rounds" aria-label="${localize(`${done} of ${total} activities completed`, `已完成 ${done} / ${total} 个小任务`)}">
     ${Array.from({ length: total }, (_, index) => `<i class="${index < done ? 'filled' : ''}"></i>`).join('')}
   </div>`;
 }
@@ -311,28 +340,27 @@ function chapter(title, content, tip) {
   const lesson = currentLesson();
   return `<div class="chapter">
     <header class="chapter-nav">
-      <button class="icon-button" data-action="home" aria-label="返回小镇地图">${icon('home')}</button>
-      <div class="chapter-track" aria-label="关卡步骤">${stages.map((step, i) =>
-        `<button data-stage="${step}" class="${i < index ? 'past' : ''}" aria-label="${stageNames[i]}"
-          title="${stageNames[i]}" ${i > run.visited ? 'disabled' : ''} ${i === index ? 'aria-current="step"' : ''}>
+      <button class="icon-button" data-action="home" aria-label="${localize('Back to the map', '返回地图')}">${icon('home')}</button>
+      <div class="chapter-track" aria-label="${localize('Lesson steps', '关卡步骤')}">${stages.map((step, i) =>
+        `<button data-stage="${step}" class="${i < index ? 'past' : ''}" aria-label="${localize(...stageNames[i])}"
+          title="${localize(...stageNames[i])}" ${i > run.visited ? 'disabled' : ''} ${i === index ? 'aria-current="step"' : ''}>
           ${i === index ? cat(lesson.cat, 'track-cat') : i === stages.length - 1 ? '★' : '<i></i>'}
         </button>`).join('')}</div>
-      <button class="icon-button" data-action="toggle-sound" aria-label="发音" aria-pressed="${state.sound}">${icon(state.sound ? 'sound' : 'muted')}</button>
+      <button class="icon-button" data-action="toggle-sound" aria-label="${localize('Sound', '发音')}" aria-pressed="${state.sound}">${icon(state.sound ? 'sound' : 'muted')}</button>
     </header>
-    <div class="chapter-heading"><p>第 ${run.index + 1} 站 · ${lesson.name}</p><h2 id="scene-title" tabindex="-1">${title}</h2></div>
-    <div class="chapter-content">${content}${statusLine}</div>
-    <aside class="coach">${run.index === 0 ? sprite('cat') : cat(lesson.cat)}<div><b>给大人的小提示</b><p>${tip}</p></div></aside>
+    <div class="chapter-heading"><p>${stopName(run.index)} · ${lessonName(lesson)}</p><h2 id="scene-title" tabindex="-1">${title}</h2></div>
+    <div class="chapter-content">${content}${audioPlayer}${statusLine}</div>
+    <aside class="coach">${run.index === 0 ? sprite('cat') : cat(lesson.cat)}<div><b>${localize('Tip for grown-ups', '给大人的小提示')}</b><p>${tip}</p></div></aside>
   </div>`;
 }
 
 function showFilm() {
   const lesson = currentLesson();
-  return chapter(lesson.title, `
+  return chapter(hanzi(lesson.title), `
     <div class="film-frame" ${chapterLandscape(lesson)}><span class="film-scenery">${art(lesson.scene, lesson)}</span>${sprite('car', 'film-car')}<span class="film-spark" aria-hidden="true">✦</span></div>
-    <audio class="film-narration" src="${introTrack(lesson)}" preload="none" hidden></audio>
-    <p class="film-caption">${lesson.intro}</p>
-    <div class="panel-actions">${secondary('播放开场', 'play-film', 'sound')}${primary('开始认字', 'advance')}</div>`,
-    '先一起看看猫猫今天遇到了什么。孩子想直接认字时，可以跳过开场。');
+    <p class="film-caption" lang="zh-Hans">${lesson.intro}</p>
+    <div class="panel-actions">${secondary(localize('Play intro', '播放开场'), 'play-film', 'sound')}${primary(localize('Learn the characters', '开始认字'), 'advance')}</div>`,
+    localize('Watch what happens to the cats, or go straight to the characters.', '先一起看看猫猫今天遇到了什么。孩子想直接认字时，可以跳过开场。'));
 }
 
 function playFilm() {
@@ -344,10 +372,10 @@ function playFilm() {
     });
   };
   const lesson = currentLesson();
-  playSceneAudio(introTrack(lesson), lesson.intro, '播放开场', { onStart: animate });
+  playSceneAudio(introTrack(lesson), lesson.intro, localize('Play intro', '播放开场'), { onStart: animate });
 }
 
-function playSceneAudio(track, text, replayLabel, { hint = '', onStart } = {}) {
+function playSceneAudio(track, text, replayLabel, { hint = '', onStart, fallbackToSpeech = true } = {}) {
   stopSpeech();
   const currentId = speechId;
   const clip = scene.querySelector('audio');
@@ -367,20 +395,22 @@ function playSceneAudio(track, text, replayLabel, { hint = '', onStart } = {}) {
     if (currentId !== speechId) return;
     onStart?.();
     if (error.name === 'NotAllowedError') {
-      status.textContent = `点「${replayLabel}」听一遍。`;
-    } else {
+      status.textContent = localize(`Tap “${replayLabel}” to listen.`, `点「${replayLabel}」听一遍。`);
+    } else if (fallbackToSpeech) {
       speak(text, hint);
+    } else {
+      status.textContent = hint;
     }
   });
 }
 
 function playTraceGuide() {
   if (state.sound) run.traceGuidePlayed = true;
-  playSceneAudio(traceGuide.track, traceGuide.text, '听写字提示');
+  playSceneAudio(traceGuide.track, traceGuide.text, localize('Hear tracing instructions', '听写字提示'));
 }
 
 function traceCard(word) {
-  return `<svg id="trace" class="trace-card" viewBox="0 0 240 240" role="img" aria-label="${word.han}的描红格">
+  return `<svg id="trace" class="trace-card" viewBox="0 0 240 240" role="img" aria-label="${localize(`Tracing grid for ${word.han}`, `${word.han}的描红格`)}">
     <path class="trace-grid" d="M0 120H240M120 0V240M0 0l240 240M240 0 0 240"/>
     ${word.strokes.map((path) => `<path class="trace-guide" d="${path}"/>`).join('')}
     ${word.strokes.map((path) => `<path class="trace-path" pathLength="1" d="${path}"/>`).join('')}
@@ -389,7 +419,8 @@ function traceCard(word) {
 }
 
 function traceProgress(stroke, total) {
-  return stroke >= total ? '写好啦！' : `第 ${stroke + 1} 笔，共 ${total} 笔`;
+  return stroke >= total ? localize('Finished!', '写好啦！') :
+    localize(`Stroke ${stroke + 1} of ${total}`, `第 ${stroke + 1} 笔，共 ${total} 笔`);
 }
 
 function showWord() {
@@ -398,30 +429,34 @@ function showWord() {
   const mode = run.wordMode;
   if (mode === 'trace') {
     const done = run.stroke >= word.strokes.length;
-    return chapter(`跟猫猫写「${word.han}」`, `
+    return chapter(localize(`Trace ${hanzi(word.han)}`, `跟猫猫写「${word.han}」`), `
       ${traceCard(word)}
-      <audio class="trace-narration" src="${traceGuide.track}" preload="none" hidden></audio>
       <p class="phase-copy" id="trace-count" role="status">${traceProgress(run.stroke, word.strokes.length)}</p>
-      <p class="phase-copy" id="trace-instruction" ${done ? 'hidden' : ''}>${traceGuide.text}</p>
+      <p class="phase-copy" id="trace-instruction" ${done ? 'hidden' : ''}>${localize('Start at the bright dot. Follow the gray line slowly.', traceGuide.text)}</p>
       <div class="panel-actions" id="trace-actions">${done
-        ? primary('继续', 'advance') : `${secondary('听写字提示', 'hear-trace', 'sound')}${secondary('看示范', 'demo-stroke')}${secondary('跳过描红', 'advance', 'arrow')}`}</div>`,
-      '请让孩子照自己的速度写。需要帮忙时，可以先看这一笔怎么写。');
+        ? primary(localize('Continue', '继续'), 'advance') :
+          `${secondary(localize('Hear tracing instructions', '听写字提示'), 'hear-trace', 'sound')}
+          ${secondary(localize('Show the stroke', '看示范'), 'demo-stroke')}
+          ${secondary(localize('Skip tracing', '跳过描红'), 'advance', 'arrow')}`}</div>`,
+      localize('Let your child trace at their own pace. Show the next stroke if they need help.', '请让孩子照自己的速度写。需要帮忙时，可以先看这一笔怎么写。'));
   }
   const revealed = mode === 'glyph';
-  return chapter(revealed ? `一起读「${word.han}」` : '点图，看看会变成什么字', `
+  return chapter(revealed ? localize(`Read ${hanzi(word.han)} aloud`, `一起读「${word.han}」`) :
+    localize('Tap the picture to reveal the character', '点图，看看会变成什么字'), `
     <button class="picture-word ${revealed ? 'revealed' : ''}" data-action="turn-word"
-      aria-label="${revealed ? `读完了，描写${word.han}` : `点图看字：${word.meaning}`}">
-      ${revealed ? `<strong class="big-han">${word.han}</strong><span class="pinyin">${word.py}</span><span class="meaning" lang="en">${word.meaning}</span>`
+      aria-label="${revealed ? localize(`Trace ${word.han}`, `读完了，描写${word.han}`) :
+        localize(`Reveal the character for ${word.meaning}`, '点图看字')}">
+      ${revealed ? `<strong class="big-han" lang="zh-Hans">${word.han}</strong><span class="pinyin" lang="zh-Latn">${word.py}</span><span class="meaning" lang="en">${word.meaning}</span>`
         : art(word.art, lesson)}
     </button>
-    <div class="panel-actions">${revealed ? `${secondary('再听一遍', 'hear-word', 'sound')}${primary('写一写', 'turn-word')}`
-      : secondary('看汉字', 'turn-word', 'arrow')}</div>`,
-    word.action);
+    <div class="panel-actions">${revealed ? `${secondary(localize('Listen again', '再听一遍'), 'hear-word', 'sound')}${primary(localize('Trace it', '写一写'), 'turn-word')}`
+      : secondary(localize('Show character', '看汉字'), 'turn-word', 'arrow')}</div>`,
+    localize(...word.action));
 }
 
 function tile(value, index, extra = '') {
   const css = [run.missed.has(index) ? 'miss' : '', extra].join(' ');
-  return `<button class="tile ${css}" data-pick="${index}" ${run.hit ? 'disabled' : ''}>${value}</button>`;
+  return `<button class="tile ${css}" data-pick="${index}" lang="zh-Hans" ${run.hit ? 'disabled' : ''}>${value}</button>`;
 }
 
 function quizFeedback(label) {
@@ -430,84 +465,89 @@ function quizFeedback(label) {
 
 function showListening() {
   const question = run.questions[run.round];
-  return chapter('听一听，找一找', `
+  return chapter(localize('Listen and find the character', '听一听，找一找'), `
     ${rounds(run.round, run.questions.length)}
-    ${secondary('听这个字', 'hear-question', 'sound')}
+    ${secondary(localize('Hear the character', '听这个字'), 'hear-question', 'sound')}
     <div class="tile-row">${run.choices.map((han, i) => tile(han, i)).join('')}</div>
-    ${quizFeedback('听一听，然后点出你听到的字。')}
-    <button class="text-button" data-action="show-hint">用拼音提示</button>`,
-    `先听读音，再认字形。答错可以继续试。需要帮忙时，想一想：${question.hint}`);
+    ${quizFeedback(localize('Tap the character you hear.', '听一听，然后点出你听到的字。'))}
+    <button class="text-button" data-action="show-hint">${localize('Show pinyin hint', '用拼音提示')}</button>`,
+    localize(`If your child needs help, give them this hint. ${question.hint[0]}`, `需要帮忙时，想一想：${question.hint[1]}`));
 }
 
 function showBuild() {
   const item = currentPhrase();
   const ready = run.slots === item.han;
-  return chapter(ready ? '拼好啦，读一读' : '听词语，按顺序点字', `
-    ${audioPlayer}
+  const hearWord = secondary(localize('Hear the word', '听这个词'), 'hear-phrase', 'sound');
+  return chapter(ready ? localize('Read the word aloud', '拼好啦，读一读') :
+    localize('Listen and tap the characters in order', '听词语，按顺序点字'), `
     ${rounds(run.round, 3)}
     <div class="build-board">
-      <div class="art-card" role="img" aria-label="${item.label}">${art(item.art, currentLesson())}</div>
-      <div class="slots" aria-label="拼词格">${[...item.han].map((_, i) => `<span class="slot ${run.slots?.[i] ? 'filled' : ''}">${run.slots?.[i] ?? ''}</span>`).join('')}</div>
+      <div class="art-card" role="img" aria-label="${localize(...item.label)}">${art(item.art, currentLesson())}</div>
+      <div class="slots" aria-label="${localize('Word slots', '拼词格')}">${[...item.han].map((_, i) => `<span class="slot ${run.slots?.[i] ? 'filled' : ''}" lang="zh-Hans">${run.slots?.[i] ?? ''}</span>`).join('')}</div>
     </div>
-    ${ready ? `<div class="panel-actions">${secondary('听这个词', 'hear-phrase', 'sound')}${primary('读过了', 'next-item', 'check')}</div>`
+    ${ready ? `<div class="panel-actions">${hearWord}${primary(localize('I read it', '读过了'), 'next-item', 'check')}</div>`
       : `<div class="tile-row small-tiles">${run.choices.map((han, i) => tile(han, i)).join('')}</div>
-        <div class="panel-actions">${secondary('听这个词', 'hear-phrase', 'sound')}${run.slots ? secondary('重新拼', 'clear-build') : ''}</div>
-        <p id="feedback" class="phase-copy" role="status">听完整个词，再从第一个字开始点。</p>`}`,
-    ready ? '请孩子把拼好的词读一遍，读完点「读过了」。' :
-      '可以再听一遍。请孩子想想先听到了哪个字，再听到了哪个字。');
+        <div class="panel-actions">${hearWord}${run.slots ? secondary(localize('Start over', '重新拼'), 'clear-build') : ''}</div>
+        <p id="feedback" class="phase-copy" role="status">${localize('Listen to the whole word, then start with the first character.', '听完整个词，再从第一个字开始点。')}</p>`}`,
+    ready ? localize('Have your child read the word, then tap “I read it”.', '请孩子把拼好的词读一遍，读完点「读过了」。') :
+      localize('Play the word again if your child needs help hearing which character comes first.', '可以再听一遍。请孩子想想先听到了哪个字，再听到了哪个字。'));
 }
 
 function showMatch() {
   const item = currentPhrase();
   const lesson = currentLesson();
-  const positionHint = ['above', 'below'].includes(item.art) ? '看小球在盒子的哪边。' : '哪张图表示这个词？';
-  return chapter('读一读，选图片', `
+  const positionHint = ['above', 'below'].includes(item.art)
+    ? localize('Look at where the ball is in relation to the box.', '看小球在盒子的哪边。')
+    : localize('Which picture matches this word?', '哪张图表示这个词？');
+  return chapter(localize('Read the word and pick a picture', '读一读，选图片'), `
     ${rounds(run.round, lesson.phrases.length)}
-    <div class="read-card">${item.han}</div>
+    <div class="read-card" lang="zh-Hans">${item.han}</div>
+    <div class="panel-actions">${secondary(localize('Hear the word', '听这个词'), 'hear-phrase', 'sound')}</div>
     <p class="phase-copy">${positionHint}</p>
     <div class="tile-row picture-tiles">${run.choices.map((value, i) => {
       const option = value === 'inside' ? insideOption : lesson.phrases.find(({ art }) => art === value);
-      return `<button class="tile" data-pick="${i}" aria-label="${option.label}">${art(option.art, lesson)}</button>`;
+      return `<button class="tile" data-pick="${i}" aria-label="${localize(...option.label)}">${art(option.art, lesson)}</button>`;
     }).join('')}</div>
     ${quizFeedback('')}`,
-    '让孩子先自己读卡片，再选图。卡住了，可以把词读一遍给孩子听。');
+    localize('Let your child try reading first. They can tap “Hear the word” for help.', '让孩子先自己读卡片。卡住时，可以点「听这个词」。'));
 }
 
 function storyText(lesson) {
   const familiar = new Set(lessons.slice(0, run.index + 1).flatMap(({ words }) => words.map(({ han }) => han)));
   return [...lesson.story].map((char) => familiar.has(char)
-    ? `<button class="story-hanzi" data-say="${char}" aria-label="听 ${char}">${char}</button>` : char).join('');
+    ? `<button class="story-hanzi" data-say="${char}">${char}</button>` : char).join('');
 }
 
 function showStory() {
   const lesson = currentLesson();
-  return chapter('一起读绘本', `
-    ${audioPlayer}
+  return chapter(localize('Read the story together', '一起读绘本'), `
     <div class="spread">
       <figure class="storybook-art" ${chapterLandscape(lesson)}>${sprite('car')}<span>${art(lesson.scene, lesson)}</span></figure>
-      <article class="storybook-text"><h3>${lesson.title}</h3><p>${storyText(lesson)}</p></article>
+      <article class="storybook-text" lang="zh-Hans"><h3>${lesson.title}</h3><p>${storyText(lesson)}</p></article>
     </div>
-    <div class="panel-actions">${secondary('朗读整页', 'read-story', 'sound')}${primary('读完了', 'advance')}</div>`,
-    '大人读故事，读到黄色汉字就停一停，让孩子接着念。点任意黄色汉字可以听它的读音。');
+    <div class="panel-actions">${secondary(localize('Read the page aloud', '朗读整页'), 'read-story', 'sound')}${primary(localize('Done reading', '读完了'), 'advance')}</div>`,
+    localize('Pause at each yellow character and let your child read it. Tap a character to hear it.', '大人读故事，读到黄色汉字就停一停，让孩子接着念。点任意黄色汉字可以听它的读音。'));
 }
 
 function showStickers() {
   const lesson = currentLesson();
   const placed = new Set(run.placed);
-  return chapter(`贴上${lesson.sticker}和它的小车`, `
+  const stickerLabel = (kind) => kind === 'cat' ? stickerName(lesson) : localize('Cat car', '猫猫小车');
+  return chapter(localize(`Place ${stickerName(lesson)} and the cat car`, `贴上${stickerName(lesson)}和它的小车`), `
     <div class="sticker-sheet">
       ${['cat', 'car'].map((item) => `<div class="sticker-space ${placed.has(item) ? 'stuck' : ''}" data-slot="${item}">
         ${item === 'cat' && run.index ? cat(lesson.cat) : sprite(item)}
-        <span>${item === 'cat' ? lesson.sticker : '猫猫小车'}</span>
+        <span>${stickerLabel(item)}</span>
       </div>`).join('')}
     </div>
     <div class="sticker-tray">
-      ${['cat', 'car'].filter((item) => !placed.has(item)).map((item) => `<button class="pick-sticker" draggable="true" data-sticker="${item}" aria-label="贴上${item === 'cat' ? lesson.sticker : '猫猫小车'}">
+      ${['cat', 'car'].filter((item) => !placed.has(item)).map((item) => `<button class="pick-sticker" draggable="true" data-sticker="${item}" aria-label="${localize(`Place ${stickerLabel(item)}`, `贴上${stickerLabel(item)}`)}">
         ${item === 'cat' && run.index ? cat(lesson.cat) : sprite(item)}
       </button>`).join('')}
     </div>
-    <div class="panel-actions">${placed.size === 2 ? primary('开车出发', 'advance') : '<p class="phase-copy">点贴纸，或者拖到上面的轮廓。</p>'}</div>`,
-    '让孩子把两张贴纸贴到轮廓上。贴好就可以开着猫猫小车去找路牌。');
+    <div class="panel-actions">${placed.size === 2 ? primary(localize('Let’s drive', '开车出发'), 'advance') :
+      `<p class="phase-copy">${localize('Tap each sticker or drag it to its outline.', '点贴纸，或者拖到上面的轮廓。')}</p>`}</div>`,
+    localize('Place both stickers to take the cat car out and look for road signs.', '让孩子把两张贴纸贴到轮廓上。贴好就可以开着猫猫小车去找路牌。'));
 }
 
 function roadQuestions() {
@@ -522,27 +562,28 @@ function roadQuestions() {
 
 function showDrive() {
   if (run.round === 6) {
-    return chapter('猫猫到达终点啦！', `
+    return chapter(localize('The cat reached the finish!', '猫猫到达终点啦！'), `
       ${rounds(6, 6)}<div class="finish-road">${sprite('car')}<span aria-hidden="true">🏁</span></div>
-      <p class="phase-copy">读过 6 块路牌 · 得到 ${run.starred.length} 颗星星</p>
-      ${primary('盖上过关印章', 'complete', 'check')}`,
-      '陪孩子回想今天最喜欢的一个字，再盖章完成。');
+      <p class="phase-copy">${localize(`6 signs read · ${run.starred.length} / 6 stars`, `读过 6 块路牌 · 得到 ${run.starred.length} / 6 颗星星`)}</p>
+      ${primary(localize('Finish this stop', '盖上过关印章'), 'complete', 'check')}`,
+      localize('Ask your child which character they liked best, then stamp the page.', '陪孩子回想最喜欢的一个字，再盖章完成。'));
   }
-  const label = ['左车道', '中间车道', '右车道'];
-  const bonus = run.driving && !run.starred.includes(run.round);
-  return chapter('开猫猫小车，找到路牌', `
-    ${audioPlayer}
+  const label = [localize('Left lane', '左车道'), localize('Middle lane', '中间车道'), localize('Right lane', '右车道')];
+  return chapter(localize('Drive the cat car and find the signs', '开猫猫小车，找到路牌'), `
     ${rounds(run.round, 6)}
-    <div class="road ${run.driving && !run.fast ? 'moving' : ''}" id="road">
-      ${run.choices.map((han, i) => `<button data-lane="${i}" class="lane" aria-label="${label[i]}：${han}"
-        ${!run.driving || run.hit ? 'disabled' : ''}><span class="road-sign ${han.length > 2 ? 'is-long' : ''}">${han}</span></button>`).join('')}
+    <div class="road ${run.driving && !run.stationary ? 'moving' : ''}" id="road">
+      ${run.choices.map((han, i) => `<button data-lane="${i}" class="lane" aria-label="${label[i]} · ${han}"
+        ${!run.driving || run.hit ? 'disabled' : ''}><span class="road-sign ${han.length > 2 ? 'is-long' : ''}" lang="zh-Hans">${han}</span></button>`).join('')}
       <span class="road-car" style="--lane:${run.lane}">${sprite('car')}</span>
-      ${bonus && !run.fast ? `<span class="road-treat" style="--lane:${run.bonusLane}" aria-hidden="true">★</span>` : ''}
     </div>
-    <p class="phase-copy" id="road-status" role="status">${run.driving ? '听清要找的字或词，再点它所在的车道。' : '点「出发」，听听要找哪个字或词。'} · <span id="road-stars">★ ${run.starred.length}</span></p>
-    <div class="panel-actions">${run.driving ? secondary('再听路牌', 'hear-road', 'sound') : primary('出发', 'start-drive')}
-      ${secondary(run.fast ? '切换为行驶模式' : '切换为静止练习', 'drive-mode')}</div>`,
-    '点车道转向。开过星星可以收集它，选对路牌才能到终点。需要多一点时间时，可以切换到静止练习。');
+    <p class="phase-copy" id="road-status" role="status">${run.driving
+      ? localize('Listen, then tap the lane with the matching sign.', '听清要找的字或词，再点它所在的车道。')
+      : localize('Tap “Start” to hear the first sign.', '点「出发」，听听要找哪个字或词。')} · ★ ${run.starred.length}</p>
+    <div class="panel-actions">${run.driving
+      ? secondary(localize('Hear the sign again', '再听路牌'), 'hear-road', 'sound')
+      : primary(localize('Start', '出发'), 'start-drive')}
+      ${secondary(run.stationary ? localize('Turn on animation', '开启行驶动画') : localize('Turn off animation', '关闭行驶动画'), 'drive-mode')}</div>`,
+    localize('Take your time. Picking the right sign on the first try earns a star.', '慢慢听，再选路牌。一次选对就能拿到星星。'));
 }
 
 function showFinish() {
@@ -551,21 +592,26 @@ function showFinish() {
   const route = volumes[lesson.volume];
   const next = lessons[run.index + 1];
   const endOfVolume = last || next.volume !== lesson.volume;
-  const title = last ? '猫猫学中文毕业啦！' :
-    endOfVolume ? `${route.title}读完啦！` : `${lesson.name}探险完成！`;
-  const read = `今天认识了「${lesson.words[0].han}」和「${lesson.words[1].han}」。`;
-  let note = '';
-  if (!last && availability(run.index + 1) === 'tomorrow') note = endOfVolume
-    ? `明天来读「${volumes[next.volume].title}」。` : '明天再来找下一只猫猫。';
-  else if (!last && endOfVolume) note = `翻到「${volumes[next.volume].title}」继续。`;
+  const title = last ? localize('You finished Cats Learn Chinese!', '猫猫学中文毕业啦！') :
+    endOfVolume ? localize(`You finished ${volumeName(route)}!`, `${volumeName(route)}读完啦！`) :
+      localize(`${lessonName(lesson)} complete!`, `${lessonName(lesson)}探险完成！`);
+  const [first, second] = lesson.words.map(({ han }) => hanzi(han));
+  const read = localize(`You learned ${first} and ${second}. `, `这关认识了「${first}」和「${second}」。`);
+  const nextVolume = next && volumeName(volumes[next.volume]);
+  const note = last ? '' : endOfVolume
+    ? localize(`Open ${nextVolume} to keep going.`, `翻到「${nextVolume}」继续。`)
+    : localize('The next stop is open.', '下一站已经开放。');
   return `<div class="chapter finish-page">
-    <div class="finish-stamp">${icon('check')} 第 ${run.index + 1} 站</div>
+    <div class="finish-stamp">${icon('check')} ${stopName(run.index)}</div>
     <h2 id="scene-title" tabindex="-1">${title}</h2>
     <div class="finish-cats">${endOfVolume
       ? (last ? lessons : route.lessons).map((item) => cat(item.cat)).join('')
       : `${run.index ? cat(lesson.cat) : sprite('cat')}${sprite('car')}`}</div>
-    <p>${last ? `读完 ${lessons.length} 个故事，认识 ${characterCount} 个汉字，贴纸册也集齐了。` : read + note}</p>
-    <div class="panel-actions">${secondary('看看贴纸册', 'finish-album', 'book')}${primary('回到小镇地图', 'home', 'home')}</div>
+    <p>${last ? localize(
+      `You read ${lessons.length} stories, learned ${characterCount} characters, and collected every sticker.`,
+      `读完 ${lessons.length} 个故事，认识 ${characterCount} 个汉字，贴纸册也集齐了。`,
+    ) : read + note}</p>
+    <div class="panel-actions">${secondary(localize('View stickers', '看看贴纸册'), 'finish-album', 'book')}${primary(localize('Back to the map', '回到地图'), 'home', 'home')}</div>
   </div>`;
 }
 
@@ -578,7 +624,6 @@ const renderers = {
 function renderScene(focus = true) {
   stopSpeech();
   clearTimeout(timer);
-  clearTimeout(bonusTimer);
   run.missed ??= new Set();
   run.slots ??= '';
   run.wordMode ??= 'picture';
@@ -598,7 +643,7 @@ function renderScene(focus = true) {
       if (count === word.strokes.length) {
         stopSpeech();
         $('trace-instruction').hidden = true;
-        $('trace-actions').innerHTML = primary('继续', 'advance');
+        $('trace-actions').innerHTML = primary(localize('Continue', '继续'), 'advance');
         $('trace-actions').querySelector('button').focus({ preventScroll: true });
       }
     });
@@ -608,27 +653,41 @@ function renderScene(focus = true) {
 function nextItem() {
   const count = { listen: run.questions.length, build: 3, match: currentLesson().phrases.length }[run.stage];
   if (run.round + 1 === count) {
-    advance();
-    if (run.stage === 'listen') hearQuestion();
-    if (run.stage === 'build') hearPhrase();
-    return;
+    return advance();
   }
   run.round++;
   resetRound();
   checkpoint();
   renderScene();
+  playStageCue();
+}
+
+function playStageCue() {
+  if (run.stage === 'film') playFilm();
   if (run.stage === 'listen') hearQuestion();
   if (run.stage === 'build') hearPhrase();
 }
 
+function pinyinHint(word) {
+  return localize(`Pinyin hint: ${word.py}`, `听音提示：${word.py}`);
+}
+
+function hearCharacter(word, replayLabel) {
+  const hint = pinyinHint(word);
+  speak(word.han, hint, () => {
+    playSceneAudio(wordTrack(word), word.han, replayLabel, { hint, fallbackToSpeech: false });
+  });
+}
+
 function hearQuestion() {
   const word = run.questions[run.round];
-  speak(word.han, `听音提示：${word.py}`);
+  hearCharacter(word, localize('Hear the character', '听这个字'));
 }
 
 function hearPhrase() {
   const phrase = currentPhrase();
-  playSceneAudio(phraseTrack(phrase), phrase.han, '听这个词', { hint: `请大人读一遍「${phrase.han}」。` });
+  const hint = localize(`Ask a grown-up to read “${phrase.han}”.`, `请大人读一遍「${phrase.han}」。`);
+  playSceneAudio(wordTrack(phrase), phrase.han, localize('Hear the word', '听这个词'), { hint });
 }
 
 function choose(index, button) {
@@ -642,7 +701,7 @@ function choose(index, button) {
     if (choice !== phrase.han[run.slots.length]) {
       run.missed.add(index);
       button.classList.add('miss');
-      $('feedback').textContent = '这个字还没轮到。再听一遍，找下一个字。';
+      $('feedback').textContent = localize('Listen again for the next character.', '这个字还没轮到。再听一遍，找下一个字。');
       return;
     }
     run.slots += choice;
@@ -656,7 +715,9 @@ function choose(index, button) {
   if (choice !== target) {
     run.missed.add(index);
     button.classList.add('miss');
-    $('feedback').textContent = stage === 'listen' ? '再听一遍，看看另一个字。' : '再读一遍这个词，找一找它说的是哪张图。';
+    $('feedback').textContent = stage === 'listen'
+      ? localize('Listen again and try a different character.', '再听一遍，看看另一个字。')
+      : localize('Read the word again and try a different picture.', '再读一遍这个词，找一找它说的是哪张图。');
     return;
   }
   run.hit = true;
@@ -664,8 +725,8 @@ function choose(index, button) {
   scene.querySelectorAll('[data-pick]').forEach((option) => { option.disabled = true; });
   button.classList.remove('miss');
   button.classList.add('hit');
-  $('feedback').textContent = '找对啦！';
-  $('quiz-next').innerHTML = primary('继续', 'next-item');
+  $('feedback').textContent = localize('You found it!', '找对啦！');
+  $('quiz-next').innerHTML = primary(localize('Continue', '继续'), 'next-item');
   $('quiz-next').querySelector('button').focus({ preventScroll: true });
 }
 
@@ -680,77 +741,56 @@ function placeSticker(kind) {
 function hearRoad() {
   const item = roadQuestions()[run.round];
   if (!item) return;
-  if (item.py) speak(item.han, `听音提示：${item.py}`);
-  else playSceneAudio(phraseTrack(item), item.han, '再听路牌', { hint: `找这块路牌：${item.han}` });
+  const label = localize('Hear the sign again', '再听路牌');
+  if (item.py) hearCharacter(item, label);
+  else playSceneAudio(wordTrack(item), item.han, label, {
+    hint: localize(`Find this sign: ${item.han}`, `找这块路牌：${item.han}`),
+  });
 }
 
 function startDrive() {
   run.driving = true;
-  run.selected = false;
   run.hit = false;
-  run.bonusLane = (run.round + 2) % 3;
   renderScene(false);
   scene.querySelector('.lane')?.focus({ preventScroll: true });
   hearRoad();
-  if (!run.fast) {
-    bonusTimer = setTimeout(() => {
-      if (run.lane === run.bonusLane && !run.starred.includes(run.round)) {
-        run.starred.push(run.round);
-        $('road-stars').textContent = `★ ${run.starred.length}`;
-        checkpoint();
-      }
-      scene.querySelector('.road-treat')?.remove();
-    }, 2500);
-    timer = setTimeout(resolveLane, 5800);
-  }
 }
 
-function steer(lane) {
+function chooseLane(lane) {
   if (!run.driving || run.hit) return;
-  run.lane = lane;
-  run.selected = true;
-  scene.querySelector('.road-car').style.setProperty('--lane', lane);
-  scene.querySelectorAll('[data-lane]').forEach((button, i) =>
-    button.classList.toggle('chosen', i === lane));
-  if (run.fast) resolveLane();
-}
-
-function resolveLane() {
-  if (!run || run.stage !== 'drive' || !run.driving) return;
   const target = roadQuestions()[run.round].han;
+  run.lane = lane;
+  scene.querySelector('.road-car').style.setProperty('--lane', lane);
+  const button = scene.querySelector(`[data-lane="${lane}"]`);
+  if (run.choices[lane] !== target) {
+    run.missed.add(lane);
+    scene.querySelector('.lane.miss')?.classList.remove('miss');
+    button.classList.add('miss');
+    $('road-status').textContent = localize('Listen again and try another lane.', '再听一遍，试试另一条车道。');
+    return;
+  }
+
   run.hit = true;
   $('road').classList.remove('moving');
-  scene.querySelectorAll('[data-lane]').forEach((button) => { button.disabled = true; });
-  if (run.selected && run.choices[run.lane] === target) {
-    $('road-status').textContent = `读对了这块路牌！ · ★ ${run.starred.length}`;
-    scene.querySelector(`[data-lane="${run.lane}"]`).classList.add('hit');
-    recordAnswer(target, run.missed.size === 0);
-    timer = setTimeout(() => {
-      run.round++;
-      resetRound();
-      checkpoint();
-      if (run.round === 6) renderScene();
-      else if (run.fast) renderScene();
-      else startDrive();
-    }, 650);
-  } else {
-    run.missed.add(run.lane);
-    $('road-status').textContent = '这块路牌还会回来，准备再找一次。';
-    timer = setTimeout(() => {
-      if (!run.fast) startDrive();
-      else {
-        run.hit = false;
-        renderScene(false);
-        hearRoad();
-      }
-    }, 850);
-  }
+  scene.querySelectorAll('[data-lane]').forEach((option) => { option.disabled = true; });
+  button.classList.remove('miss');
+  button.classList.add('hit');
+  const firstTry = run.missed.size === 0;
+  if (firstTry && !run.starred.includes(run.round)) run.starred.push(run.round);
+  recordAnswer(target, firstTry);
+  $('road-status').textContent = localize(`Right sign! · ★ ${run.starred.length}`, `读对了这块路牌！ · ★ ${run.starred.length}`);
+  run.round++;
+  checkpoint();
+  timer = setTimeout(() => {
+    resetRound();
+    if (run.round === 6) renderScene();
+    else startDrive();
+  }, 650);
 }
 
 function complete() {
   if (run.index === state.completed.length) {
     state.completed.push(dayAfter());
-    state.early = null;
     state.resume = null;
     save();
   }
@@ -771,6 +811,15 @@ $('cover-back').addEventListener('click', () => {
   showHome(false);
   $('open-book').focus();
 });
+for (const select of languageControls) {
+  select.addEventListener('change', () => {
+    state.language = select.value;
+    save();
+    $('notice').textContent = '';
+    updateLanguage();
+    if (state.opened) renderMap();
+  });
+}
 $('stops').addEventListener('click', (event) => {
   const stop = event.target.closest('[data-stop]');
   if (stop) begin(Number(stop.dataset.stop));
@@ -788,7 +837,7 @@ $('sound').addEventListener('click', () => {
   save();
   $('sound').setAttribute('aria-pressed', state.sound);
   $('sound').innerHTML = icon(state.sound ? 'sound' : 'muted');
-  notify(state.sound ? '发音已开启。' : '发音已关闭。');
+  notify(state.sound ? localize('Sound is on.', '发音已开启。') : localize('Sound is off.', '发音已关闭。'));
 });
 $('album').addEventListener('click', showAlbum);
 const guide = $('guide');
@@ -806,7 +855,7 @@ for (const type of ['pointerup', 'pointercancel', 'pointerleave']) {
 }
 guide.addEventListener('click', (event) => {
   if (event.detail === 0) showGuide();
-  else if (!parentHeld) notify('请按住「家长角」打开设置。');
+  else if (!parentHeld) notify(localize('Press and hold “Grown-ups” to open.', '请按住「家长角」打开。'));
 });
 panel.addEventListener('close', () => {
   if (!journey.open && !panel.open) $(panelReturn)?.focus({ preventScroll: true });
@@ -815,12 +864,6 @@ panel.addEventListener('click', (event) => {
   const button = event.target.closest('button');
   if (!button) return;
   if (button.dataset.action === 'close-panel') panel.close();
-  if (button.dataset.action === 'early' && availability(state.completed.length) === 'tomorrow') {
-    state.early = state.completed.length;
-    save();
-    renderMap();
-    showGuide();
-  }
   if (button.dataset.replay !== undefined) begin(Number(button.dataset.replay), false);
 });
 
@@ -830,7 +873,6 @@ journey.addEventListener('close', () => {
   if (run?.stage === 'finish' && index + 1 === state.completed.length) index = nextStop();
   if (lessons[index]) activeVolume = lessons[index].volume;
   clearTimeout(timer);
-  clearTimeout(bonusTimer);
   stopSpeech();
   run = null;
   renderMap();
@@ -858,9 +900,9 @@ scene.addEventListener('click', (event) => {
   const { action, pick, stage, say, sticker, lane } = button.dataset;
   if (pick !== undefined) return choose(Number(pick), button);
   if (sticker) return placeSticker(sticker);
-  if (lane !== undefined) return steer(Number(lane));
+  if (lane !== undefined) return chooseLane(Number(lane));
   if (stage && stage !== run.stage && stages.indexOf(stage) <= run.visited) return go(stage);
-  if (say) return speak(say);
+  if (say) return hearCharacter(characterLessons.get(say), say);
   switch (action) {
     case 'home':
       journey.close();
@@ -874,7 +916,6 @@ scene.addEventListener('click', (event) => {
       break;
     case 'advance':
       advance();
-      if (run.stage === 'listen') hearQuestion();
       break;
     case 'play-film':
       playFilm();
@@ -883,7 +924,7 @@ scene.addEventListener('click', (event) => {
       run.wordMode = run.wordMode === 'picture' ? 'glyph' : 'trace';
       checkpoint();
       renderScene();
-      if (run.wordMode === 'glyph') speak(currentWord().han, currentWord().py);
+      if (run.wordMode === 'glyph') hearCharacter(currentWord(), localize('Listen again', '再听一遍'));
       else if (!run.traceGuidePlayed && run.stroke < currentWord().strokes.length) playTraceGuide();
       break;
     case 'hear-trace':
@@ -893,13 +934,13 @@ scene.addEventListener('click', (event) => {
       cleanupTracing?.();
       break;
     case 'hear-word':
-      speak(currentWord().han, currentWord().py);
+      hearCharacter(currentWord(), localize('Listen again', '再听一遍'));
       break;
     case 'hear-question':
       hearQuestion();
       break;
     case 'show-hint':
-      $('speech-status').textContent = `听音提示：${run.questions[run.round].py}`;
+      $('speech-status').textContent = pinyinHint(run.questions[run.round]);
       break;
     case 'next-item':
       nextItem();
@@ -912,7 +953,7 @@ scene.addEventListener('click', (event) => {
       renderScene();
       break;
     case 'read-story':
-      playSceneAudio(storyTrack(currentLesson()), currentLesson().story, '朗读整页');
+      playSceneAudio(storyTrack(currentLesson()), currentLesson().story, localize('Read the page aloud', '朗读整页'));
       break;
     case 'start-drive':
       startDrive();
@@ -921,10 +962,10 @@ scene.addEventListener('click', (event) => {
       hearRoad();
       break;
     case 'drive-mode': {
-      const driving = run.driving;
-      run.fast = !run.fast;
-      if (driving && !run.hit) startDrive();
-      else if (!run.hit) renderScene();
+      run.stationary = !run.stationary;
+      $('road').classList.toggle('moving', run.driving && !run.stationary && !run.hit);
+      button.textContent = run.stationary
+        ? localize('Turn on animation', '开启行驶动画') : localize('Turn off animation', '关闭行驶动画');
       break;
     }
     case 'complete':
@@ -940,4 +981,5 @@ scene.addEventListener('click', (event) => {
 window.addEventListener('focus', () => {
   if (!journey.open && state.opened) renderMap();
 });
+updateLanguage();
 showHome(state.opened);

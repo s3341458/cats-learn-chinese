@@ -53,28 +53,36 @@ def render(pipeline, text, track, speed, pause):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--trace-only", action="store_true", help="render only the writing prompt")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--trace-only", action="store_true", help="render only the writing prompt")
+    mode.add_argument("--characters-only", action="store_true", help="render only the character recordings")
     args = parser.parse_args()
     data = json.loads(subprocess.check_output([
         "node", "--input-type=module", "-e",
-        "import { introTrack, lessons, phraseTrack, storyTrack, traceGuide } from './dist/lessons.js'; "
+        "import { introTrack, lessons, storyTrack, traceGuide, wordTrack } from './dist/lessons.js'; "
         "console.log(JSON.stringify({traceGuide, intros: lessons.map(lesson => "
         "({text: lesson.intro, track: introTrack(lesson)})), "
         "stories: lessons.map(lesson => ({text: lesson.story, track: storyTrack(lesson)})), "
         "phrases: lessons.flatMap(lesson => lesson.phrases.map(phrase => "
-        "({text: phrase.han, track: phraseTrack(phrase)})))}));",
+        "({text: phrase.han, track: wordTrack(phrase)}))), "
+        "characters: lessons.flatMap(lesson => lesson.words.map(word => "
+        "({text: word.han, track: wordTrack(word)})))}));",
     ], cwd=ROOT))
     torch.set_num_threads(2)
     pipeline = KPipeline(lang_code="z", repo_id=MODEL, device="cpu")
-    if not args.trace_only:
+    if not args.trace_only and not args.characters_only:
         for intro in data["intros"]:
             render(pipeline, intro["text"], intro["track"], speed=0.88, pause=0.23)
         for story in data["stories"]:
             render(pipeline, story["text"], story["track"], speed=0.85, pause=0.28)
         for phrase in data["phrases"]:
             render(pipeline, phrase["text"], phrase["track"], speed=0.80, pause=0.14)
-    guide = data["traceGuide"]
-    render(pipeline, guide["text"], guide["track"], speed=0.79, pause=0.36)
+    if not args.trace_only:
+        for word in data["characters"]:
+            render(pipeline, word["text"], word["track"], speed=0.77, pause=0.20)
+    if not args.characters_only:
+        guide = data["traceGuide"]
+        render(pipeline, guide["text"], guide["track"], speed=0.79, pause=0.36)
 
 
 if __name__ == "__main__":
