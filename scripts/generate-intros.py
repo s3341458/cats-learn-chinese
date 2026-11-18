@@ -4,13 +4,12 @@ import argparse
 import json
 from pathlib import Path
 import re
+import shutil
 import subprocess
+import tempfile
 
-from kokoro import KPipeline
 import numpy as np
-from pypinyin import load_phrases_dict
 import soundfile as sf
-import torch
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,13 +18,13 @@ MODEL = "hexgrad/Kokoro-82M-v1.1-zh"
 VOICE = "zf_001"
 
 
-def trim_sentence(audio):
+def trim_sentence(audio, rate=RATE):
     """Keep a little room before and after the audible speech."""
     audible = np.flatnonzero(np.abs(audio) > 0.007)
     if not len(audible):
         raise ValueError("The model produced a silent sentence")
-    start = max(0, audible[0] - int(RATE * 0.07))
-    end = min(len(audio), audible[-1] + int(RATE * 0.09))
+    start = max(0, audible[0] - int(rate * 0.10))
+    end = min(len(audio), audible[-1] + int(rate * 0.14))
     return audio[start:end]
 
 
@@ -34,26 +33,40 @@ def render(pipeline, text, track, speed, pause):
     sentences = re.findall(r"[^。！？]+[。！？]?", plain)
     pieces = [np.zeros(int(RATE * 0.12), dtype=np.float32)]
     for sentence in sentences:
-        clips = [
-            result.audio.numpy() for result in pipeline(sentence, voice=VOICE, speed=speed)
-            if result.audio is not None
-        ]
-        if not clips:
-            raise ValueError(f"No audio generated for {sentence!r}")
-        pieces.append(trim_sentence(np.concatenate(clips)))
-        pieces.append(np.zeros(int(RATE * pause), dtype=np.float32))
+        if pipeline is None:
+            with tempfile.TemporaryDirectory(prefix="cats-narration-") as directory:
+                recording = Path(directory) / "sentence.aiff"
+                subprocess.run([
+                    "say", "-v", "Tingting", "-r", str(round(190 * speed)),
+                    "-o", str(recording), sentence,
+                ], check=True)
+                clip, rate = sf.read(recording, dtype="float32")
+            if len(pieces) == 1:
+                pieces[0] = np.zeros(int(rate * 0.16), dtype=np.float32)
+        else:
+            clips = [
+                result.audio.numpy() for result in pipeline(sentence, voice=VOICE, speed=speed)
+                if result.audio is not None
+            ]
+            if not clips:
+                raise ValueError(f"No audio generated for {sentence!r}")
+            clip, rate = np.concatenate(clips), RATE
+        pieces.append(trim_sentence(clip, rate))
+        pieces.append(np.zeros(int(rate * pause), dtype=np.float32))
 
     audio = np.concatenate(pieces)
     audio *= 0.86 / np.max(np.abs(audio))
     path = ROOT / "dist" / track.lstrip("/")
     path.parent.mkdir(parents=True, exist_ok=True)
-    sf.write(path, audio, RATE, format="MP3", subtype="MPEG_LAYER_III",
+    sf.write(path, audio, rate, format="MP3", subtype="MPEG_LAYER_III",
              bitrate_mode="VARIABLE", compression_level=0.45)
-    print(f"{path.name}: {len(audio) / RATE:.1f}s", flush=True)
+    print(f"{path.name}: {len(audio) / rate:.1f}s", flush=True)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--engine", choices=("system", "kokoro"), default="system",
+                        help="system uses the installed macOS Tingting Mandarin voice")
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--trace-only", action="store_true", help="render only the writing prompt")
     mode.add_argument("--characters-only", action="store_true", help="render only the character recordings")
@@ -71,12 +84,20 @@ def main():
         "characters: lessons.flatMap(lesson => lesson.words.map(word => "
         "({text: word.han, track: wordTrack(word)})))}));",
     ], cwd=ROOT))
-    torch.set_num_threads(2)
-    pipeline = KPipeline(lang_code="z", repo_id=MODEL, device="cpu")
-    load_phrases_dict({
-        phrase["text"]: [[syllable] for syllable in phrase["py"].split()]
-        for phrase in data["phrases"]
-    })
+    pipeline = None
+    if args.engine == "system":
+        if not shutil.which("say"):
+            parser.error("The system engine requires macOS say. Use --engine kokoro on other systems.")
+    else:
+        from kokoro import KPipeline
+        from pypinyin import load_phrases_dict
+        import torch
+        torch.set_num_threads(2)
+        pipeline = KPipeline(lang_code="z", repo_id=MODEL, device="cpu")
+        load_phrases_dict({
+            phrase["text"]: [[syllable] for syllable in phrase["py"].split()]
+            for phrase in data["phrases"]
+        })
     if not args.trace_only and not args.characters_only:
         if not args.practice_only:
             for intro in data["intros"]:

@@ -118,14 +118,14 @@ function speak(text, hint = '', onFailure) {
     clearTimeout(speechTimer);
     activeUtterance = null;
   };
-  utterance.onerror = (event) => {
-    if (currentId === speechId && !['canceled', 'interrupted'].includes(event.error)) tryRecording();
+  utterance.onerror = () => {
+    if (currentId === speechId) tryRecording();
   };
   speechStatus(localize('Loading Mandarin audio…', '正在加载普通话语音……'));
   speechTimer = setTimeout(tryRecording, 1500);
   try {
     if (speech.paused) speech.resume();
-    speech.speak(utterance);
+    speech.speak(activeUtterance);
   } catch {
     tryRecording();
   }
@@ -509,6 +509,7 @@ function showWord() {
       ${traceCard(word)}
       <p class="phase-copy" id="trace-count" role="status">${traceProgress(run.stroke, word.strokes.length)}</p>
       <p class="phase-copy" id="trace-instruction" ${done ? 'hidden' : ''}>${localize('Start at the bright dot. Follow the gray line slowly.', traceGuide.text)}</p>
+      <div class="panel-actions">${secondary(localize('Hear the character', '听这个字'), 'hear-word', 'sound')}</div>
       <div class="panel-actions" id="trace-actions">${done
         ? primary(localize('Continue', '继续'), 'advance') :
           `${secondary(localize('Hear tracing instructions', '听写字提示'), 'hear-trace', 'sound')}
@@ -748,7 +749,11 @@ function playStageCue() {
   if (run.stage === 'listen') hearQuestion();
   if (['build', 'match'].includes(run.stage)) hearPhrase();
   if (run.stage === 'story') readStory();
-  if (run.stage === 'stickers' || (run.stage === 'drive' && run.round < 6)) hearInstructions();
+  if (run.stage === 'stickers') hearInstructions();
+  if (run.stage === 'drive' && run.round < 6) {
+    if (run.driving && !run.hit) hearRoad();
+    else hearInstructions();
+  }
 }
 
 function pinyinHint(word) {
