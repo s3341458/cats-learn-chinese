@@ -37,8 +37,8 @@ function read() {
   return {
     opened: saved?.opened === true,
     sound: (saved?.sound ?? old?.sound) !== false,
+    language: saved?.language === 'zh-Hans' ? 'zh-Hans' : 'en',
     completed,
-    early: saved?.early === completed.length ? saved.early : null,
     review,
     resume: resume?.index === completed.length ? resume : null,
   };
@@ -53,9 +53,7 @@ export function save() {
 
 export function availability(index) {
   if (index < state.completed.length) return 'done';
-  if (index > state.completed.length) return 'locked';
-  if (index === 0 || state.early === index || state.completed[index - 1] < dayAfter()) return 'open';
-  return 'tomorrow';
+  return index === state.completed.length ? 'open' : 'locked';
 }
 
 export function dueCharacters(lesson) {
