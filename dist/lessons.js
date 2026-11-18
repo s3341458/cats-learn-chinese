@@ -24,7 +24,19 @@ const word = (han, py, meaning, art, action, hint, near) =>
   ({ han, py, meaning, art, action, hint, near, strokes: strokes[han] });
 // Each picture question has two reviewed alternatives. A picture that could
 // also answer the question (for example, a group containing an adult) is excluded.
-const phrase = (han, art, label, extra, alternatives) => ({ han, art, label, extra, alternatives });
+const phrasePinyin = {
+  大人: 'dà rén', 门口: 'mén kǒu', 张口: 'zhāng kǒu', 小孩: 'xiǎo hái',
+  大鱼: 'dà yú', 小鱼: 'xiǎo yú', 大门: 'dà mén', 小猫: 'xiǎo māo',
+  晴天: 'qíng tiān', 雨天: 'yǔ tiān', 太热: 'tài rè', 天黑: 'tiān hēi',
+  木门: 'mù mén', 木桌: 'mù zhuō', 本子: 'běn zi', 一本书: 'yì běn shū',
+  上面: 'shàng miàn', 下面: 'xià miàn', 上楼: 'shàng lóu', 下楼: 'xià lóu',
+  日出: 'rì chū', 日落: 'rì luò', 月亮: 'yuè liang', 日记: 'rì jì',
+  高山: 'gāo shān', 石头: 'shí tou', 石桥: 'shí qiáo', 小路: 'xiǎo lù',
+  河水: 'hé shuǐ', 水杯: 'shuǐ bēi', 火苗: 'huǒ miáo', 火车: 'huǒ chē',
+  稻田: 'dào tián', 泥土: 'ní tǔ', 土豆: 'tǔ dòu', 土墙: 'tǔ qiáng',
+};
+const phrase = (han, art, label, extra, alternatives) =>
+  ({ han, py: phrasePinyin[han], art, label, extra, alternatives });
 
 const town = [
   {
@@ -82,8 +94,8 @@ const town = [
     phrases: [
       phrase('晴天', 'sunny-field', ['Sunshine over blue sky and grass', '阳光照着蓝天和草地'], '雨', ['rainy-field', 'night-field']),
       phrase('雨天', 'rainy-field', ['Raindrops and puddles under clouds', '乌云下有雨滴和水洼'], '晴', ['sunny-field', 'night-field']),
-      phrase('太热', 'sweaty-cat', ['Stars in a dark blue sky', '小猫满头大汗，正用爪子扇风'], '天', ['rainy-field', 'night-field']),
-      phrase('天黑', 'night-field', ['A sweaty kitten fanning itself', '深蓝色天空下亮着星星'], '太', ['sunny-field', 'rainy-field']),
+      phrase('太热', 'sweaty-cat', ['A sweaty kitten fanning itself', '小猫满头大汗，正用爪子扇风'], '天', ['rainy-field', 'night-field']),
+      phrase('天黑', 'night-field', ['Stars in a dark blue sky', '深蓝色天空下亮着星星'], '太', ['sunny-field', 'rainy-field']),
     ],
     story: '今天是晴天，风车田里太热了。奶油猫撑起伞，去大树下喝水。它想起雨天凉凉的风，真盼着再凉快一点。等到天黑，风也凉了，它才慢慢走回家。',
   },
@@ -227,4 +239,15 @@ export const wordTrack = ({ han }) =>
 export const traceGuide = {
   text: '先把手指放在亮点上。再沿着灰线，慢慢写。',
   track: '/audio/instructions/trace.mp3',
+};
+
+export const activityPrompts = {
+  picture: { text: '点一点图片，看看它会变成什么字。', track: '/audio/instructions/picture.mp3' },
+  trace: traceGuide,
+  listen: { text: '听一听，再点出你听到的汉字。', track: '/audio/instructions/listen.mp3' },
+  build: { text: '先听完整个词，再按顺序点出词里的汉字。', track: '/audio/instructions/build.mp3' },
+  match: { text: '读一读卡片上的词，再选出意思相符的图片。', track: '/audio/instructions/match.mp3' },
+  story: { text: '我们一起读故事。点亮起来的汉字，还能听到它的读音。', track: '/audio/instructions/story.mp3' },
+  stickers: { text: '点一点贴纸，把猫猫和小车贴到轮廓上。', track: '/audio/instructions/stickers.mp3' },
+  drive: { text: '听清要找的字或词，再点一下它所在的车道。', track: '/audio/instructions/drive.mp3' },
 };

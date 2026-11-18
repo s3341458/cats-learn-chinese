@@ -8,6 +8,7 @@ import subprocess
 
 from kokoro import KPipeline
 import numpy as np
+from pypinyin import load_phrases_dict
 import soundfile as sf
 import torch
 
@@ -31,7 +32,7 @@ def trim_sentence(audio):
 def render(pipeline, text, track, speed, pause):
     plain = re.sub(r"[「」“”]", "", text)
     sentences = re.findall(r"[^。！？]+[。！？]?", plain)
-    pieces = []
+    pieces = [np.zeros(int(RATE * 0.12), dtype=np.float32)]
     for sentence in sentences:
         clips = [
             result.audio.numpy() for result in pipeline(sentence, voice=VOICE, speed=speed)
@@ -56,31 +57,41 @@ def main():
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--trace-only", action="store_true", help="render only the writing prompt")
     mode.add_argument("--characters-only", action="store_true", help="render only the character recordings")
+    mode.add_argument("--practice-only", action="store_true", help="render words and activity instructions")
     args = parser.parse_args()
     data = json.loads(subprocess.check_output([
         "node", "--input-type=module", "-e",
-        "import { introTrack, lessons, storyTrack, traceGuide, wordTrack } from './dist/lessons.js'; "
+        "import { activityPrompts, introTrack, lessons, storyTrack, traceGuide, wordTrack } from './dist/lessons.js'; "
         "console.log(JSON.stringify({traceGuide, intros: lessons.map(lesson => "
         "({text: lesson.intro, track: introTrack(lesson)})), "
         "stories: lessons.map(lesson => ({text: lesson.story, track: storyTrack(lesson)})), "
         "phrases: lessons.flatMap(lesson => lesson.phrases.map(phrase => "
-        "({text: phrase.han, track: wordTrack(phrase)}))), "
+        "({text: phrase.han, py: phrase.py, track: wordTrack(phrase)}))), "
+        "instructions: Object.entries(activityPrompts).filter(([key]) => key !== 'trace').map(([, prompt]) => prompt), "
         "characters: lessons.flatMap(lesson => lesson.words.map(word => "
         "({text: word.han, track: wordTrack(word)})))}));",
     ], cwd=ROOT))
     torch.set_num_threads(2)
     pipeline = KPipeline(lang_code="z", repo_id=MODEL, device="cpu")
+    load_phrases_dict({
+        phrase["text"]: [[syllable] for syllable in phrase["py"].split()]
+        for phrase in data["phrases"]
+    })
     if not args.trace_only and not args.characters_only:
-        for intro in data["intros"]:
-            render(pipeline, intro["text"], intro["track"], speed=0.88, pause=0.23)
-        for story in data["stories"]:
-            render(pipeline, story["text"], story["track"], speed=0.85, pause=0.28)
+        if not args.practice_only:
+            for intro in data["intros"]:
+                render(pipeline, intro["text"], intro["track"], speed=0.88, pause=0.23)
+            for story in data["stories"]:
+                render(pipeline, story["text"], story["track"], speed=0.85, pause=0.28)
         for phrase in data["phrases"]:
-            render(pipeline, phrase["text"], phrase["track"], speed=0.80, pause=0.14)
-    if not args.trace_only:
+            print(f'{phrase["text"]} ({phrase["py"]})', flush=True)
+            render(pipeline, phrase["text"], phrase["track"], speed=0.76, pause=0.25)
+        for prompt in data["instructions"]:
+            render(pipeline, prompt["text"], prompt["track"], speed=0.80, pause=0.30)
+    if not args.trace_only and not args.practice_only:
         for word in data["characters"]:
             render(pipeline, word["text"], word["track"], speed=0.77, pause=0.20)
-    if not args.characters_only:
+    if not args.characters_only and not args.practice_only:
         guide = data["traceGuide"]
         render(pipeline, guide["text"], guide["track"], speed=0.79, pause=0.36)
 

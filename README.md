@@ -16,16 +16,16 @@ npm run dev
 
 打开 <http://localhost:9018>。如需改用别的端口，可设置 `PORT`。修改页面后刷新浏览器。
 
-`npm run check` 检查 JavaScript 语法。关卡文字和笔顺在 `dist/lessons.js`。发音使用设备可用的普通话语音，听音题也可打开拼音提示。
+`npm run check` 检查 JavaScript 语法。关卡文字、词语拼音和笔顺在 `dist/lessons.js`。听音题也可打开拼音提示。
 
-开场旁白、写字提示、字词和绘本整页用 [Kokoro 的普通话模型](https://huggingface.co/hexgrad/Kokoro-82M-v1.1-zh) 提前合成，成品位于 `dist/audio/`。单字优先使用设备的普通话语音，缺失或播放失败时使用备用录音。选图题可点播词语。修改课程文字后，可用 Python 3.12 重新生成相关音频。
+开场旁白、题目说明、写字提示、字词和绘本整页用 [Kokoro 的普通话模型](https://huggingface.co/hexgrad/Kokoro-82M-v1.1-zh) 提前合成，成品位于 `dist/audio/`。词语按课程标注的拼音合成，整词朗读，首尾留出短暂停顿。单字优先使用设备的普通话语音，缺失、报错或未能启动时使用备用录音。各题型可重听中文题目说明，选图题会朗读词语并显示拼音。修改课程文字后，可用 Python 3.12 重新生成相关音频。
 
 ```sh
 python -m pip install "kokoro==0.9.4" "misaki[zh]==0.9.4" "soundfile>=0.13,<1"
 python scripts/generate-intros.py
 ```
 
-只改了写字提示时，使用 `--trace-only`。只更新单字录音时，使用 `--characters-only`。
+只改了写字提示时，使用 `--trace-only`。只更新单字录音时，使用 `--characters-only`。只更新词语和题目说明时，使用 `--practice-only`。
 
 猫咪和小车插画由内置 ImageGen 生成，保存在 `dist/assets/kitten-stickers.png`。提示词为绘本水粉与彩铅风格、两张分离的透明贴纸，内容是戴薄荷绿领巾的橘猫和它开的薄荷绿玩具车，只画猫，不加文字或品牌。
 

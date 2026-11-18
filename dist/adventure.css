@@ -45,6 +45,8 @@
 .cover-cats .sprite-cat { width: min(34%, 160px); transform: rotate(-7deg); }
 .cover-cats .sprite-car { width: min(53%, 248px); transform: rotate(5deg); }
 .cover .primary { padding-inline: 23px; }
+.prompt-controls { margin-bottom: 12px; }
+.prompt-controls .secondary { min-height: 36px; font-size: 13px; padding: 5px 12px; }
 .cover-language { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 20px; font-size: 13px; }
 .language-select {
   min-height: 38px;
