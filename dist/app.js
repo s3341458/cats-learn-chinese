@@ -81,32 +81,26 @@ function speechStatus(message) {
   if (status) status.textContent = message;
 }
 
-function speak(text, hint = '', onFailure) {
+function speak(text, hint) {
   stopSpeech();
   const currentId = speechId;
   const fallback = () => {
     if (currentId !== speechId) return;
+    stopSpeech();
     speechStatus(hint || localize('Audio could not play. Tap the listen button to try again.', '语音暂时无法播放，请点朗读按钮重试。'));
   };
-  if (!state.sound) return fallback();
-  const tryRecording = () => {
-    if (currentId !== speechId) return;
-    clearTimeout(speechTimer);
-    if (onFailure) onFailure();
-    else fallback();
-  };
-  if (!('speechSynthesis' in window)) return tryRecording();
-
   const speech = window.speechSynthesis;
+  if (!state.sound || !speech || !window.SpeechSynthesisUtterance) return fallback();
+  const voices = speech.getVoices();
+  const lang = (voice) => voice.lang.toLowerCase().replaceAll('_', '-');
+  const voice = voices.find((item) => ['zh-cn', 'zh-hans-cn'].includes(lang(item))) ||
+    voices.find((item) => /^cmn(?:-|$)/.test(lang(item))) ||
+    voices.find((item) => ['zh-hans', 'zh-sg', 'zh-hans-sg', 'zh-my', 'zh-hans-my', 'zh-tw', 'zh-hant-tw', 'zh'].includes(lang(item)));
+  if (!voice) return fallback();
   const utterance = new SpeechSynthesisUtterance(text);
   activeUtterance = utterance;
-  utterance.lang = 'zh-CN';
+  utterance.lang = voice.lang;
   utterance.rate = 0.78;
-  const voices = speech.getVoices();
-  const voice = voices.find((item) => /^zh[-_]CN$/i.test(item.lang)) ||
-    voices.find((item) => /^cmn(?:[-_]|$)/i.test(item.lang)) ||
-    voices.find((item) => /^zh(?![-_](?:HK|MO|yue)(?:[-_]|$))/i.test(item.lang));
-  if (!voice) return tryRecording();
   utterance.voice = voice;
   utterance.onstart = () => {
     if (currentId !== speechId) return;
@@ -118,16 +112,14 @@ function speak(text, hint = '', onFailure) {
     clearTimeout(speechTimer);
     activeUtterance = null;
   };
-  utterance.onerror = () => {
-    if (currentId === speechId) tryRecording();
-  };
+  utterance.onerror = fallback;
   speechStatus(localize('Loading Mandarin audio…', '正在加载普通话语音……'));
-  speechTimer = setTimeout(tryRecording, 1500);
+  speechTimer = setTimeout(fallback, 1500);
   try {
     if (speech.paused) speech.resume();
     speech.speak(activeUtterance);
   } catch {
-    tryRecording();
+    fallback();
   }
 }
 
@@ -236,6 +228,7 @@ function showGuide() {
         <td>${item.due <= dayAfter() ? localize('Due', '到期') : item.due}</td><td>${item.right} / ${item.tries}</td></tr>`).join('')}</tbody></table></div>`
         : `<p>${localize('Your results appear here after a listening, word-building, or picture activity.', '做过听音、拼词或选图后，就会出现记录。')}</p>`}
       <p>${localize('Progress and stickers are saved in this browser. Lesson audio is always in Mandarin.', '进度和贴纸保存在此浏览器。课程语音始终使用普通话。')}</p>
+      <p><a href="/audio/credits.txt" target="_blank" rel="noopener">${localize('Mandarin recording credits', '普通话录音来源与署名')}</a></p>
     </div>`, 'guide');
 }
 
@@ -426,7 +419,7 @@ function playFilm() {
   playSceneAudio(introTrack(lesson), lesson.intro, localize('Play intro', '播放开场'), { onStart: animate });
 }
 
-function playSceneAudio(track, text, replayLabel, { hint = '', onStart, fallbackToSpeech = true } = {}) {
+function playSceneAudio(track, text, replayLabel, { hint = '', onStart } = {}) {
   stopSpeech();
   const currentId = speechId;
   if (!state.sound) {
@@ -442,11 +435,8 @@ function playSceneAudio(track, text, replayLabel, { hint = '', onStart, fallback
     if (error?.name === 'NotAllowedError') {
       stopSpeech();
       speechStatus(localize(`Tap “${replayLabel}” to listen.`, `点「${replayLabel}」听一遍。`));
-    } else if (fallbackToSpeech) {
-      speak(text, hint);
     } else {
-      stopSpeech();
-      speechStatus(localize(`Audio could not play. Tap “${replayLabel}” to try again.`, `语音暂时无法播放，请点「${replayLabel}」重试。`) + (hint ? ` ${hint}` : ''));
+      speak(text, hint);
     }
   };
   const loading = () => {
@@ -468,7 +458,7 @@ function playSceneAudio(track, text, replayLabel, { hint = '', onStart, fallback
   };
   narration.onerror = () => failed();
   narration.onwaiting = loading;
-  if (narration.getAttribute('src') !== track) narration.src = track;
+  if (narration.getAttribute('src') !== track || narration.error) narration.src = track;
   narration.currentTime = 0;
   loading();
   narration.play().catch(failed);
@@ -765,10 +755,7 @@ function pinyinHint(word) {
 }
 
 function hearCharacter(word, replayLabel) {
-  const hint = pinyinHint(word);
-  speak(word.han, hint, () => {
-    playSceneAudio(wordTrack(word), word.han, replayLabel, { hint, fallbackToSpeech: false });
-  });
+  playSceneAudio(wordTrack(word), word.han, replayLabel, { hint: pinyinHint(word) });
 }
 
 function hearQuestion() {

@@ -8,6 +8,7 @@ import { activityPrompts, introTrack, lessons, storyTrack, volumes, wordTrack } 
 const asset = (path) => fileURLToPath(new URL(`../dist${path}`, import.meta.url));
 const cats = readFileSync(asset('/assets/cats.svg'), 'utf8');
 const gardenCards = readFileSync(asset('/assets/garden-cards.svg'), 'utf8');
+const nativeRecordings = JSON.parse(readFileSync(new URL('./native-recordings.json', import.meta.url), 'utf8'));
 const seenCats = new Set();
 const seenCharacters = new Set();
 const audio = new Set(Object.values(activityPrompts).map(({ track }) => track));
@@ -44,4 +45,10 @@ for (const lesson of lessons) {
   }
 }
 for (const path of audio) assert.ok(statSync(asset(path)).size > 1000, `Missing or empty recording: ${path}`);
+const vocabulary = new Map(lessons.flatMap(({ words, phrases }) => [...words, ...phrases].map(word => [word.han, word])));
+for (const [han, source] of Object.entries(nativeRecordings)) {
+  const word = vocabulary.get(han);
+  assert.equal(word?.py, source.py, `Native recording pinyin: ${han}`);
+  assert.ok(readFileSync(asset(wordTrack(word))).includes(Buffer.from(source.file)), `Wrong native recording: ${han}`);
+}
 console.log(`Curriculum verified: ${volumes.length} books, ${lessons.length} lessons, ${seenCharacters.size} characters, ${audio.size} recordings.`);

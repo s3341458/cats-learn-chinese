@@ -31,11 +31,11 @@ const word = (han, py, meaning, art, action, hint, near) =>
 // Each picture question has two reviewed alternatives. A picture that could
 // also answer the question (for example, a group containing an adult) is excluded.
 const phrasePinyin = {
-  大人: 'dà rén', 门口: 'mén kǒu', 张口: 'zhāng kǒu', 小孩: 'xiǎo hái',
+  大人: 'dà ren', 门口: 'mén kǒu', 张口: 'zhāng kǒu', 小孩: 'xiǎo hái',
   大鱼: 'dà yú', 小鱼: 'xiǎo yú', 大门: 'dà mén', 小猫: 'xiǎo māo',
   晴天: 'qíng tiān', 雨天: 'yǔ tiān', 太热: 'tài rè', 天黑: 'tiān hēi',
   木门: 'mù mén', 木桌: 'mù zhuō', 本子: 'běn zi', 一本书: 'yì běn shū',
-  上面: 'shàng miàn', 下面: 'xià miàn', 上楼: 'shàng lóu', 下楼: 'xià lóu',
+  上面: 'shàng mian', 下面: 'xià mian', 上楼: 'shàng lóu', 下楼: 'xià lóu',
   日出: 'rì chū', 日落: 'rì luò', 月亮: 'yuè liang', 日记: 'rì jì',
   高山: 'gāo shān', 石头: 'shí tou', 石桥: 'shí qiáo', 小路: 'xiǎo lù',
   河水: 'hé shuǐ', 水杯: 'shuǐ bēi', 火苗: 'huǒ miáo', 火车: 'huǒ chē',

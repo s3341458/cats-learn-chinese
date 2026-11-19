@@ -20,14 +20,18 @@ npm run dev
 
 `npm run check` 检查 JavaScript 语法及课程完整性，包括拼音、选项、猫咪插画、笔画路径和全部录音文件。关卡文字、词语拼音和笔顺在 `dist/lessons.js`。听音题也可打开拼音提示。
 
-开场旁白、题目说明、写字提示、字词和绘本整页使用 macOS Tingting 普通话语音提前合成，成品位于 `dist/audio/`。整词朗读，句间及首尾留出短暂停顿。单字优先使用设备的普通话语音，缺失、报错或异常中断时使用备用录音。各题型可重听中文题目说明，选图题会朗读词语并显示拼音。修改课程文字后，可在安装了 Tingting 语音的 macOS 上重新生成录音。
+24 个单字和 16 个词语采用 Yue Tan 的普通话真人录音。点字、听音选字、拼词和路牌练习都优先播放课程自带的录音。其余词语、开场、题目说明和绘本旁白使用预先合成的 Tingting 普通话录音。播放出错时会尝试设备上的普通话语音。可在家长角查看[录音署名与许可](dist/audio/credits.txt)。
+
+修改课程文字后，可在安装了 Tingting 语音的 macOS 上重新生成合成录音。生成器会跳过已有真人示范。
 
 ```sh
 python -m pip install numpy "soundfile>=0.13,<1"
 python scripts/generate-intros.py
 ```
 
-只改了写字提示时，使用 `--trace-only`。只更新单字录音时，使用 `--characters-only`。只更新词语和题目说明时，使用 `--practice-only`。只更新开场和绘本故事时，使用 `--narration-only`。
+只改了写字提示时，使用 `--trace-only`。只更新需要合成的单字时，使用 `--characters-only`。只更新合成词语和题目说明时，使用 `--practice-only`。只更新开场和绘本故事时，使用 `--narration-only`。
+
+`scripts/native-recordings.json` 记录真人示范的原始文件名与拼音。从[卡昂大学录音合集镜像](https://www.yojik.eu/audiocollections/detailled/cmn-caen-tan/flac/)取得对应 FLAC 后，用 `python scripts/generate-intros.py --import-native <FLAC目录>` 可重新导入，也可用 `--lesson` 限定关卡。
 
 新增章节可以只生成和检查对应关卡，避免重做已有录音。`--lesson` 使用从 1 开始的站点编号，可以重复：
 
@@ -56,4 +60,4 @@ bash scripts/deploy-cloudfront.sh cats-learn-chinese.theyucheng.com <hosted-zone
 
 脚本会在 `us-east-1` 创建或更新站点，上传静态文件，并刷新 CloudFront 缓存。首次部署需要等待 ACM 验证域名和 CloudFront 生效。学习进度和贴纸保存在使用者的浏览器里，每个网址各自保存。
 
-本项目采用 [MIT 许可证](LICENSE)。
+项目代码采用 [MIT 许可证](LICENSE)。真人录音采用 [CC BY-SA 3.0 US](https://creativecommons.org/licenses/by-sa/3.0/us/)。

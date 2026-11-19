@@ -1,0 +1,23 @@
+普通话真人录音 · Mandarin recording credits
+
+© 2009 Yue Tan. Recorded by the Université de Caen for the
+“Collection audio libre de mots chinois (mandarins)”, cmn-caen-tan.
+
+录音与本游戏的 MP3 版本均采用 CC BY-SA 3.0 US 许可。
+The recordings and these MP3 adaptations are licensed under CC BY-SA 3.0 US.
+https://creativecommons.org/licenses/by-sa/3.0/us/
+
+原始录音与署名 · Original recordings and notice
+https://www.yojik.eu/audiocollections/detailled/cmn-caen-tan/
+
+单字 · Characters
+人 口 大 小 天 太 木 本 上 下 日 月 山 石 水 火 田 土 白 云 风 雨 花 草
+
+词语 · Words
+大人 门口 晴天 本子 上面 下面 月亮 日记 石头 火车 泥土 土豆 乌云 雨伞 雨衣 风筝
+
+原始无损录音经音量调整并转成 MP3。每个文件保留完整读音和原语速。
+「石」采用同音字「十」的单字录音，两者在这里都读 shí。
+Each complete FLAC recording was level-adjusted and encoded as MP3 at its
+original speed. 石 uses the isolated syllable shí recorded for 十. The MP3
+metadata includes the original FLAC filename.
