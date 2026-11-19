@@ -19,6 +19,8 @@ const files = new Map([
   ['/assets/garden-cards.svg', 'image/svg+xml'],
   ['/assets/cards-town.jpg', 'image/jpeg'],
   ['/assets/cards-outdoors.jpg', 'image/jpeg'],
+  ['/assets/market.jpg', 'image/jpeg'],
+  ['/assets/cards-market.jpg', 'image/jpeg'],
   ...Object.values(activityPrompts).map(({ track }) => [track, 'audio/mpeg']),
   ...lessons.flatMap((lesson) => [
     introTrack(lesson), storyTrack(lesson), ...[...lesson.words, ...lesson.phrases].map(wordTrack),

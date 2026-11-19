@@ -240,6 +240,7 @@ const artSymbols = {
 const artSheets = [
   ['cards-town', ['adult', 'child', 'doorway', 'yawn', 'sunny-field', 'rainy-field', 'night-field', 'sweaty-cat', 'wood-door', 'wood-table', 'notebook', 'picture-book']],
   ['cards-outdoors', ['fish', 'kitten', 'gate', 'diary', 'mountain', 'round-stone', 'stone-bridge', 'trail', 'paddy', 'earth', 'potato', 'mud-wall']],
+  ['cards-market', ['passenger-car', 'horse-carriage', 'bicycle', 'bus-stop', 'raw-rice', 'corn-cob', 'watermelon', 'cucumber', 'school-bag', 'bookshelf', 'pencil', 'brush']],
 ];
 const pictures = new Map(artSheets.flatMap(([sheet, items]) => items.map((item, index) =>
   [item, `<span class="atlas-picture" aria-hidden="true" style="--sheet:url('/assets/${sheet}.jpg');--column:${index % 4 * 100 / 3}%;--row:${Math.floor(index / 4) * 50}%"></span>`],
@@ -765,8 +766,7 @@ function hearQuestion() {
 
 function hearPhrase() {
   const phrase = currentPhrase();
-  const hint = localize(`Ask a grown-up to read “${phrase.han}”.`, `请大人读一遍「${phrase.han}」。`);
-  playSceneAudio(wordTrack(phrase), phrase.han, localize('Hear the word', '听这个词'), { hint });
+  playSceneAudio(wordTrack(phrase), phrase.han, localize('Hear the word', '听这个词'), { hint: pinyinHint(phrase) });
 }
 
 function choose(index, button) {

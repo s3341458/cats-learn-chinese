@@ -24,6 +24,12 @@ const strokes = {
   雨: ['M50 49 L192 47', 'M59 88 L61 195', 'M60 88 L182 85 L182 188 Q181 202 165 191', 'M120 49 L120 195', 'M78 110 L98 127', 'M78 152 L99 169', 'M139 109 L160 126', 'M139 152 L161 169'],
   花: ['M49 65 L194 63', 'M91 43 L91 84', 'M151 43 L150 83', 'M94 101 Q76 127 47 146', 'M77 125 L77 200', 'M186 110 Q159 141 122 152', 'M132 100 L132 184 Q131 195 151 195 L184 195 Q198 195 198 179'],
   草: ['M49 57 L193 55', 'M90 39 L90 76', 'M151 39 L150 75', 'M76 91 L77 155', 'M76 91 L169 89 L168 155', 'M79 122 L166 121', 'M78 153 L168 153', 'M48 178 L195 176', 'M122 155 L122 212'],
+  车: ['M51 76 L189 74', 'M112 43 Q94 86 67 117 L178 115', 'M45 153 L194 149', 'M125 98 L125 204'],
+  马: ['M66 55 L174 53 L163 118', 'M81 70 L73 118 L187 116 Q184 180 173 200 Q164 208 150 193', 'M49 160 L154 158'],
+  米: ['M67 55 Q82 66 89 85', 'M171 54 Q158 74 145 86', 'M48 105 L194 102', 'M122 44 L122 203', 'M116 106 Q90 155 44 183', 'M126 109 Q151 153 201 181'],
+  瓜: ['M164 46 Q143 64 82 72', 'M82 72 Q83 148 44 192', 'M112 69 L107 174 L140 160', 'M126 128 Q140 143 148 164', 'M159 59 Q158 150 202 193'],
+  书: ['M68 70 L166 68 L160 113', 'M51 118 L185 115 L177 167 Q174 182 154 169', 'M115 40 L115 203', 'M166 43 Q182 50 192 64'],
+  笔: ['M74 40 Q65 66 47 85', 'M69 57 L112 56', 'M82 59 L92 76', 'M142 39 Q133 64 118 78', 'M137 55 L191 53', 'M155 56 L166 74', 'M161 91 Q126 104 70 106', 'M66 127 L172 124', 'M53 152 L186 148', 'M115 105 L114 184 Q114 199 143 199 L176 199 Q195 199 195 178'],
 };
 
 const word = (han, py, meaning, art, action, hint, near) =>
@@ -43,6 +49,9 @@ const phrasePinyin = {
   白云: 'bái yún', 白兔: 'bái tù', 白纸: 'bái zhǐ', 乌云: 'wū yún',
   大风: 'dà fēng', 雨伞: 'yǔ sǎn', 雨衣: 'yǔ yī', 风筝: 'fēng zheng',
   红花: 'hóng huā', 小草: 'xiǎo cǎo', 花盆: 'huā pén', 草帽: 'cǎo mào',
+  汽车: 'qì chē', 马车: 'mǎ chē', 自行车: 'zì xíng chē', 车站: 'chē zhàn',
+  大米: 'dà mǐ', 玉米: 'yù mǐ', 西瓜: 'xī guā', 黄瓜: 'huáng gua',
+  书包: 'shū bāo', 书架: 'shū jià', 铅笔: 'qiān bǐ', 毛笔: 'máo bǐ',
 };
 const phrase = (han, art, label, extra, alternatives) =>
   ({ han, py: phrasePinyin[han], art, label, extra, alternatives });
@@ -296,10 +305,74 @@ const garden = [
   },
 ];
 
+const market = [
+  {
+    name: '马车站', nameEn: 'Carriage Stop', cat: 'chestnut', sticker: '栗子猫', stickerEn: 'Chestnut', at: [18, 67],
+    title: '坐马车去市集', scene: '🐎🛞',
+    intro: '栗子猫想去市集。它走到车站，看见一匹马拉着车。原来，今天可以坐马车去！',
+    words: [
+      word('车', 'chē', 'vehicle', 'passenger-car',
+        ['Point to a vehicle. Then draw the long vertical stroke of 车 in the air.', '指一指你看见的车，再用手指在空中画出「车」最后那一竖。'],
+        ['Look for a long vertical stroke crossing the bottom bar.', '找最后一竖穿过下面一横的字。'], ['东', '牛', '年']),
+      word('马', 'mǎ', 'horse', '🐎',
+        ['Tap your knees to sound like hooves. Then find the hook in 马.', '用手拍膝盖，学马蹄的声音。再找一找「马」右下角的钩。'],
+        ['Look for a long hook on the right and a short horizontal line inside.', '找右边有长钩、里面有一短横的字。'], ['鸟', '乌', '与']),
+    ],
+    phrases: [
+      phrase('汽车', 'passenger-car', ['A small blue car seen from the side', '从侧面看到的一辆蓝色小汽车'], '马', ['horse-carriage', 'bicycle']),
+      phrase('马车', 'horse-carriage', ['A horse pulling a wooden carriage', '一匹马拉着木头车厢'], '汽', ['bicycle', 'passenger-car']),
+      phrase('自行车', 'bicycle', ['A green bicycle with pedals and two wheels', '一辆有脚踏板和两个轮子的绿色自行车'], '马', ['passenger-car', 'horse-carriage']),
+      phrase('车站', 'bus-stop', ['A roadside shelter with a bench and a bus sign', '路边有站牌、雨棚和长椅的候车站'], '行', ['bicycle', 'horse-carriage']),
+    ],
+    story: '栗子猫在车站等朋友。一辆汽车开了过去，一只小猫骑着自行车从旁边经过。这时，一匹马拉着车，慢慢停在栗子猫面前。栗子猫坐上马车。听，马蹄在路上嗒嗒响！没一会儿，它就到了市集。',
+  },
+  {
+    name: '市集菜摊', nameEn: 'Market Stall', cat: 'millet', sticker: '小米猫', stickerEn: 'Millet', at: [50, 69],
+    title: '给野餐准备吃的', scene: '🌽🍉',
+    intro: '小米猫要准备午饭。它来到菜摊，看见一袋大米，还有圆圆的西瓜。你还认得摊上的哪些食物？',
+    words: [
+      word('米', 'mǐ', 'rice', 'raw-rice',
+        ['Point to the rice grains. Draw a cross in the air, then find the strokes spreading away from it in 米.', '指一指米粒，再在空中画个十字。看看「米」的十字四周还有哪几笔。'],
+        ['Look for a cross with four strokes spreading away from it.', '找中间像「十」、四周向外伸出四笔的字。'], ['木', '来', '未']),
+      word('瓜', 'guā', 'melon / gourd', 'watermelon',
+        ['Point to the watermelon rind. Then look for the two long outside strokes and the dot inside 瓜.', '指一指西瓜皮，再找「瓜」字外面的两笔长笔画和里面的一点。'],
+        ['Look for a long stroke on each side and a dot inside.', '找两边各有一长笔、里面有一点的字。'], ['爪', '抓', '勺']),
+    ],
+    phrases: [
+      phrase('大米', 'raw-rice', ['A bowl of uncooked white rice grains', '碗里装着白白的生米粒'], '瓜', ['corn-cob', 'watermelon']),
+      phrase('玉米', 'corn-cob', ['A yellow ear of corn with a green husk', '一根带着绿叶的黄色玉米棒'], '大', ['raw-rice', 'cucumber']),
+      phrase('西瓜', 'watermelon', ['A red wedge of watermelon with a green rind', '一块有绿皮、红瓤和黑籽的西瓜'], '黄', ['cucumber', 'corn-cob']),
+      phrase('黄瓜', 'cucumber', ['A whole green cucumber and pale green slices', '一根深绿的黄瓜，旁边有几片浅绿色切片'], '西', ['watermelon', 'raw-rice']),
+    ],
+    story: '小米猫买了一袋大米，准备煮饭。它还挑了一根玉米、一根黄瓜和一个西瓜。栗子猫帮它把西瓜抬上小推车。午饭好了，它们在树下铺开野餐布。两只小猫吃完了饭，最后一起分西瓜。',
+  },
+  {
+    name: '绘本屋', nameEn: 'Storybook Nook', cat: 'ink', sticker: '墨墨猫', stickerEn: 'Inky', at: [82, 66],
+    title: '画一本市集小书', scene: '📚✏️',
+    intro: '午饭后，墨墨猫请朋友们来绘本屋。它打开书包，拿出一支铅笔。今天看到了什么？我们来把它画进书里吧！',
+    words: [
+      word('书', 'shū', 'book', '📖',
+        ['Open a book. Then find the two folded strokes and the little dot in 书.', '翻开一本书，再找「书」字里的两个转弯和右上角的一点。'],
+        ['Look for two folded strokes, a tall vertical line, and a dot at the top right.', '找两笔有转弯、中间有一竖、右上有一点的字。'], ['习', '了', '事']),
+      word('笔', 'bǐ', 'pen / writing tool', 'pencil',
+        ['Hold a pencil. Find the two little groups of strokes at the top of 笔 and the part that looks like 毛 below.', '握一握手里的笔。看看「笔」的上面是不是左右各有三笔，下面是不是「毛」。'],
+        ['Look for a bamboo top above 毛.', '找竹字头下面是「毛」的字。'], ['毛', '竹', '笑']),
+    ],
+    phrases: [
+      phrase('书包', 'school-bag', ['A red school backpack with straps and a zipper', '一个有背带和拉链的红色书包'], '笔', ['bookshelf', 'pencil']),
+      phrase('书架', 'bookshelf', ['A wooden shelf holding rows of books', '木头架子上摆着一排排书'], '包', ['school-bag', 'brush']),
+      phrase('铅笔', 'pencil', ['A sharpened yellow pencil with a dark tip', '一支削尖了的黄色铅笔，笔尖是黑的'], '毛', ['brush', 'school-bag']),
+      phrase('毛笔', 'brush', ['A bamboo-handled brush with a pointed tuft of black bristles', '一支竹杆毛笔，黑色的笔毛聚成笔尖'], '铅', ['pencil', 'bookshelf']),
+    ],
+    story: '墨墨猫从书架上取下一本书。书页还空着。栗子猫用铅笔画了一辆马车，小米猫画了切开的西瓜。墨墨猫用毛笔在封面上写下书名。它把书放进书包，打算带回家读给大家听。',
+  },
+];
+
 export const volumes = [
   { title: '小镇篇', titleEn: 'Town', image: '/assets/town.svg', lessons: town },
   { title: '郊游篇', titleEn: 'Countryside', image: '/assets/countryside.jpg', lessons: countryside },
   { title: '花园篇', titleEn: 'Garden', image: '/assets/garden.svg', lessons: garden },
+  { title: '市集篇', titleEn: 'Market', image: '/assets/market.jpg', lessons: market },
 ];
 export const lessons = volumes.flatMap((volume, index) =>
   volume.lessons.map((lesson) => ({ ...lesson, volume: index })));
@@ -319,7 +392,7 @@ export const activityPrompts = {
   trace: traceGuide,
   listen: { text: '听一听，再点出你听到的汉字。', track: '/audio/instructions/listen.mp3' },
   build: { text: '先听完整个词，再按顺序点出词里的汉字。', track: '/audio/instructions/build.mp3' },
-  match: { text: '读一读卡片上的词，再选出意思相符的图片。', track: '/audio/instructions/match.mp3' },
+  match: { text: '读一读卡片上的词。想一想，这个词说的是哪张图？', track: '/audio/instructions/match.mp3' },
   story: { text: '我们一起读故事。点亮起来的汉字，还能听到它的读音。', track: '/audio/instructions/story.mp3' },
   stickers: { text: '点一点贴纸，把猫猫和小车贴到轮廓上。', track: '/audio/instructions/stickers.mp3' },
   drive: { text: '听清要找的字或词，再点一下它所在的车道。', track: '/audio/instructions/drive.mp3' },
