@@ -237,7 +237,7 @@ const garden = [
   {
     name: '白云坡', nameEn: 'Cloud Hill', cat: 'cotton', sticker: '棉花猫', stickerEn: 'Cotton', at: [19, 61],
     title: '白云像什么', scene: '☁️🐇',
-    intro: '棉花猫来到山坡上。蓝天里飘着白云，草地上坐着一只白兔。它拿出白纸，想把看到的东西画下来。',
+    intro: '棉花猫来到山坡上。天上飘着白云，草地上坐着一只白兔。棉花猫拿出白纸，准备画画。',
     words: [
       word('白', 'bái', 'white', 'white-paper',
         ['Compare 白 with 日. Find the extra slanting stroke above the box.', '和学过的「日」比一比。「白」的上面多了一小撇。指一指白纸，再读一读「白」。'],
@@ -252,12 +252,12 @@ const garden = [
       phrase('白纸', 'white-paper', ['A blank white sheet of paper', '一张没有图画和文字的白纸'], '云', ['white-rabbit', 'white-cloud']),
       phrase('乌云', 'dark-cloud', ['One dark gray cloud in the sky', '天空里的一朵深灰色乌云'], '白', ['white-cloud', 'white-paper']),
     ],
-    story: '棉花猫坐在山坡上，看见一朵白云。白云像一只白兔。它拿出白纸，画下白云和白兔。不一会儿，乌云飘来了。棉花猫收好画，准备去亭子里避雨。',
+    story: '棉花猫坐在山坡上，看见一朵白云。那朵白云看起来像一只白兔。棉花猫拿出白纸，把白云和白兔都画了下来。过了一会儿，天上飘来一朵乌云。棉花猫把画放进包里，跑到亭子下面躲雨。',
   },
   {
     name: '风雨亭', nameEn: 'Rain Pavilion', cat: 'breeze', sticker: '清风猫', stickerEn: 'Breeze', at: [51, 59],
     title: '下雨了，收好风筝', scene: '🪁☂️',
-    intro: '清风猫在草地上放风筝。大风吹来，天上落下雨点。它收好风筝，穿上雨衣，跑进亭子里。',
+    intro: '清风猫正在草地上放风筝。突然刮起了大风。清风猫赶紧收起风筝，穿上雨衣。',
     words: [
       word('风', 'fēng', 'wind', 'strong-wind',
         ['Blow gently on your palm. Look at the outside of 风, then find the two crossing strokes inside.', '轻轻向手心吹一口气，感受风。再看「风」的外框，找找里面交叉的两笔。'],
@@ -267,17 +267,17 @@ const garden = [
         ['Look for a top line and four dots inside the frame.', '找上面一横，框里有四点的字。'], ['两', '田', '而']),
     ],
     phrases: [
-      phrase('大风', 'strong-wind', ['A tree bending with blowing leaves and wind lines', '树被风吹弯，叶子随着风线飘动'], '雨', ['umbrella', 'raincoat']),
+      phrase('大风', 'strong-wind', ['A tree bending and leaves blowing sideways', '大树被吹弯了，叶子被吹得满天飞'], '雨', ['umbrella', 'raincoat']),
       phrase('雨伞', 'umbrella', ['An open yellow umbrella with a curved handle', '一把撑开的黄色弯柄雨伞'], '风', ['raincoat', 'kite']),
       phrase('雨衣', 'raincoat', ['A blue hooded raincoat with sleeves and buttons', '一件有袖子、纽扣和帽子的蓝色雨衣'], '风', ['umbrella', 'kite']),
       phrase('风筝', 'kite', ['A diamond-shaped kite with a long string and ribbon tail', '一只菱形风筝，连着长线和彩带尾巴'], '雨', ['raincoat', 'umbrella']),
     ],
-    story: '大风吹起来了，清风猫慢慢收回风筝。雨点落下来，它穿上蓝色雨衣。亭子里，棉花猫正拿着一把雨伞。两只小猫坐在一起，听雨点轻轻落在亭子上。',
+    story: '大风把风筝吹得摇来摇去。清风猫收起风筝，穿上蓝色雨衣。棉花猫撑着雨伞，朝清风猫挥手。两只小猫跑到亭子里，坐下来听雨。雨点落在屋顶上，滴答滴答。',
   },
   {
     name: '花草园', nameEn: 'Flower Garden', cat: 'blossom', sticker: '朵朵猫', stickerEn: 'Blossom', at: [82, 64],
     title: '雨后的花草园', scene: '🌺🌿',
-    intro: '雨停了，朵朵猫带朋友去花园。红花开了，小草绿了。它戴好草帽，准备给花盆添一点土。',
+    intro: '雨停了。朵朵猫戴着一顶草帽，来到花园。红花开了，小草也长高了。朵朵猫还想在花盆里种一株新花。',
     words: [
       word('花', 'huā', 'flower', 'red-flower',
         ['Point to a flower. Find the grass top of 花, then look at the two parts below it.', '指一指花，再看看「花」上面的草字头。草字头的下面，左右各有一部分。'],
@@ -292,7 +292,7 @@ const garden = [
       phrase('花盆', 'empty-pot', ['An empty terracotta flowerpot', '一个没有植物的空陶土花盆'], '草', ['straw-hat', 'green-grass']),
       phrase('草帽', 'straw-hat', ['A woven straw hat with a wide brim and a ribbon', '一顶有宽帽檐和彩带的编织草帽'], '花', ['empty-pot', 'red-flower']),
     ],
-    story: '雨停了，红花上挂着小水珠。朵朵猫戴着草帽，来到花园。它先给花盆添土，再把花苗种进去。棉花猫和清风猫坐在小草旁，一起看新种好的花。',
+    story: '雨停了，红花的花瓣上还挂着几滴水。朵朵猫戴着草帽，拿来一个空花盆。先放一点土，再把花苗种进去。棉花猫和清风猫坐在小草旁，等着新花开放。',
   },
 ];
 

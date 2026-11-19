@@ -27,7 +27,7 @@ python -m pip install numpy "soundfile>=0.13,<1"
 python scripts/generate-intros.py
 ```
 
-只改了写字提示时，使用 `--trace-only`。只更新单字录音时，使用 `--characters-only`。只更新词语和题目说明时，使用 `--practice-only`。
+只改了写字提示时，使用 `--trace-only`。只更新单字录音时，使用 `--characters-only`。只更新词语和题目说明时，使用 `--practice-only`。只更新开场和绘本故事时，使用 `--narration-only`。
 
 新增章节可以只生成和检查对应关卡，避免重做已有录音。`--lesson` 使用从 1 开始的站点编号，可以重复：
 

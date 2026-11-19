@@ -71,6 +71,7 @@ def main():
     mode.add_argument("--trace-only", action="store_true", help="render only the writing prompt")
     mode.add_argument("--characters-only", action="store_true", help="render only the character recordings")
     mode.add_argument("--practice-only", action="store_true", help="render words and activity instructions")
+    mode.add_argument("--narration-only", action="store_true", help="render only story intros and story pages")
     parser.add_argument("--lesson", action="append", type=int,
                         help="render only this 1-based lesson number; repeat for several lessons")
     args = parser.parse_args()
@@ -114,15 +115,16 @@ def main():
                 render(pipeline, intro["text"], intro["track"], speed=0.88, pause=0.23)
             for story in data["stories"]:
                 render(pipeline, story["text"], story["track"], speed=0.85, pause=0.28)
-        for phrase in data["phrases"]:
-            print(f'{phrase["text"]} ({phrase["py"]})', flush=True)
-            render(pipeline, phrase["text"], phrase["track"], speed=0.76, pause=0.25)
-        for prompt in data["instructions"]:
-            render(pipeline, prompt["text"], prompt["track"], speed=0.80, pause=0.30)
-    if not args.trace_only and not args.practice_only:
+        if not args.narration_only:
+            for phrase in data["phrases"]:
+                print(f'{phrase["text"]} ({phrase["py"]})', flush=True)
+                render(pipeline, phrase["text"], phrase["track"], speed=0.76, pause=0.25)
+            for prompt in data["instructions"]:
+                render(pipeline, prompt["text"], prompt["track"], speed=0.80, pause=0.30)
+    if not (args.trace_only or args.practice_only or args.narration_only):
         for word in data["characters"]:
             render(pipeline, word["text"], word["track"], speed=0.77, pause=0.20)
-    if not args.characters_only and not args.practice_only and not args.lesson:
+    if not (args.characters_only or args.practice_only or args.narration_only or args.lesson):
         guide = data["traceGuide"]
         render(pipeline, guide["text"], guide["track"], speed=0.79, pause=0.36)
 
