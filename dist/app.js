@@ -255,6 +255,10 @@ const insideOption = { art: 'inside', label: ['A ball inside a box', '小球在�
 
 function art(value, lesson) {
   if (pictures.has(value)) return pictures.get(value);
+  if (['white-cloud', 'dark-cloud', 'white-rabbit', 'white-paper', 'strong-wind', 'rain-drops',
+    'umbrella', 'raincoat', 'kite', 'red-flower', 'green-grass', 'empty-pot', 'straw-hat'].includes(value)) {
+    return `<svg class="garden-picture" viewBox="0 0 160 160" aria-hidden="true"><use href="/assets/garden-cards.svg#${value}"/></svg>`;
+  }
   if (value === 'cat') return cat(lesson.cat);
   if (value === 'map-stream') return '<span class="map-art map-stream" aria-hidden="true"></span>';
   if (['field-grid', 'soil', 'water-glass'].includes(value)) {

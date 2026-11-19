@@ -71,19 +71,29 @@ def main():
     mode.add_argument("--trace-only", action="store_true", help="render only the writing prompt")
     mode.add_argument("--characters-only", action="store_true", help="render only the character recordings")
     mode.add_argument("--practice-only", action="store_true", help="render words and activity instructions")
+    parser.add_argument("--lesson", action="append", type=int,
+                        help="render only this 1-based lesson number; repeat for several lessons")
     args = parser.parse_args()
+    if args.lesson and args.trace_only:
+        parser.error("--trace-only is a shared prompt; do not combine it with --lesson")
     data = json.loads(subprocess.check_output([
         "node", "--input-type=module", "-e",
         "import { activityPrompts, introTrack, lessons, storyTrack, traceGuide, wordTrack } from './dist/lessons.js'; "
         "console.log(JSON.stringify({traceGuide, intros: lessons.map(lesson => "
-        "({text: lesson.intro, track: introTrack(lesson)})), "
-        "stories: lessons.map(lesson => ({text: lesson.story, track: storyTrack(lesson)})), "
+        "({text: lesson.intro, track: introTrack(lesson), lesson: lessons.indexOf(lesson) + 1})), "
+        "stories: lessons.map(lesson => ({text: lesson.story, track: storyTrack(lesson), lesson: lessons.indexOf(lesson) + 1})), "
         "phrases: lessons.flatMap(lesson => lesson.phrases.map(phrase => "
-        "({text: phrase.han, py: phrase.py, track: wordTrack(phrase)}))), "
+        "({text: phrase.han, py: phrase.py, track: wordTrack(phrase), lesson: lessons.indexOf(lesson) + 1}))), "
         "instructions: Object.entries(activityPrompts).filter(([key]) => key !== 'trace').map(([, prompt]) => prompt), "
         "characters: lessons.flatMap(lesson => lesson.words.map(word => "
-        "({text: word.han, track: wordTrack(word)})))}));",
+        "({text: word.han, track: wordTrack(word), lesson: lessons.indexOf(lesson) + 1})))}));",
     ], cwd=ROOT))
+    if args.lesson:
+        if any(number < 1 or number > len(data["intros"]) for number in args.lesson):
+            parser.error(f"--lesson must be between 1 and {len(data['intros'])}")
+        for group in ("intros", "stories", "phrases", "characters"):
+            data[group] = [item for item in data[group] if item["lesson"] in args.lesson]
+        data["instructions"] = []
     pipeline = None
     if args.engine == "system":
         if not shutil.which("say"):
@@ -112,7 +122,7 @@ def main():
     if not args.trace_only and not args.practice_only:
         for word in data["characters"]:
             render(pipeline, word["text"], word["track"], speed=0.77, pause=0.20)
-    if not args.characters_only and not args.practice_only:
+    if not args.characters_only and not args.practice_only and not args.lesson:
         guide = data["traceGuide"]
         render(pipeline, guide["text"], guide["track"], speed=0.79, pause=0.36)
 

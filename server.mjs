@@ -14,6 +14,8 @@ const files = new Map([
   ['/assets/countryside.jpg', 'image/jpeg'],
   ['/assets/town.svg', 'image/svg+xml'],
   ['/assets/cats.svg', 'image/svg+xml'],
+  ['/assets/garden.svg', 'image/svg+xml'],
+  ['/assets/garden-cards.svg', 'image/svg+xml'],
   ['/assets/cards-town.jpg', 'image/jpeg'],
   ['/assets/cards-outdoors.jpg', 'image/jpeg'],
   ...Object.values(activityPrompts).map(({ track }) => [track, 'audio/mpeg']),

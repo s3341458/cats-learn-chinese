@@ -321,6 +321,7 @@
 }
 .small-fish .atlas-picture { width: 43%; }
 .emoji-art { white-space: nowrap; }
+.garden-picture { display: block; width: 94%; max-height: 100%; aspect-ratio: 1; }
 .map-art {
   display: block;
   width: 78%;

@@ -19,6 +19,9 @@
   <g id="smoky"><use href="#face" fill="#adbac2"/></g>
   <g id="salt"><use href="#face" fill="#a9c9e7"/></g>
   <g id="peach"><use href="#face" fill="#f2a487"/></g>
+  <g id="cotton"><use href="#face" fill="#eee6db"/></g>
+  <g id="breeze"><use href="#face" fill="#bddbd0"/></g>
+  <g id="blossom"><use href="#face" fill="#e8b5c6"/></g>
 </defs>
 <use href="#tangerine"/>
 </svg>

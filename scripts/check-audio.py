@@ -20,11 +20,11 @@ def recordings():
         "import {activityPrompts, lessons, introTrack, storyTrack, wordTrack} from './dist/lessons.js';"
         "console.log(JSON.stringify(["
         "...Object.values(activityPrompts).map(p=>({kind:'instruction',text:p.text,path:p.track})),"
-        "...lessons.flatMap(l=>["
-        "{kind:'intro',text:l.intro,path:introTrack(l)},"
-        "{kind:'story',text:l.story,path:storyTrack(l)},"
-        "...l.words.map(w=>({kind:'character',text:w.han,path:wordTrack(w)})),"
-        "...l.phrases.map(w=>({kind:'word',text:w.han,path:wordTrack(w)}))"
+        "...lessons.flatMap((l,index)=>["
+        "{kind:'intro',text:l.intro,path:introTrack(l),lesson:index+1},"
+        "{kind:'story',text:l.story,path:storyTrack(l),lesson:index+1},"
+        "...l.words.map(w=>({kind:'character',text:w.han,path:wordTrack(w),lesson:index+1})),"
+        "...l.phrases.map(w=>({kind:'word',text:w.han,path:wordTrack(w),lesson:index+1}))"
         "])"
         "]));",
     ], cwd=ROOT)
@@ -36,7 +36,15 @@ def main():
     parser.add_argument("--transcribe", action="store_true")
     parser.add_argument("--model", default="small")
     parser.add_argument("--model-cache", default="/tmp/cats-asr-model")
+    parser.add_argument("--lesson", action="append", type=int,
+                        help="audit only this 1-based lesson number; repeat for several lessons")
     args = parser.parse_args()
+    entries = recordings()
+    if args.lesson:
+        available = {entry.get("lesson") for entry in entries} - {None}
+        if not set(args.lesson) <= available:
+            parser.error(f"--lesson must be between 1 and {max(available)}")
+        entries = [entry for entry in entries if entry.get("lesson") in args.lesson]
     model = None
     if args.transcribe:
         import parselmouth
@@ -47,7 +55,7 @@ def main():
                              cpu_threads=4, download_root=args.model_cache)
 
     results = []
-    for entry in recordings():
+    for entry in entries:
         path = ROOT / "dist" / entry["path"].lstrip("/")
         samples, rate = sf.read(path, dtype="float32")
         peak = float(np.max(np.abs(samples)))
