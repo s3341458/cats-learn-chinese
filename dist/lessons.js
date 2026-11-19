@@ -30,6 +30,8 @@ const strokes = {
   瓜: ['M164 46 Q143 64 82 72', 'M82 72 Q83 148 44 192', 'M112 69 L107 174 L140 160', 'M126 128 Q140 143 148 164', 'M159 59 Q158 150 202 193'],
   书: ['M68 70 L166 68 L160 113', 'M51 118 L185 115 L177 167 Q174 182 154 169', 'M115 40 L115 203', 'M166 43 Q182 50 192 64'],
   笔: ['M74 40 Q65 66 47 85', 'M69 57 L112 56', 'M82 59 L92 76', 'M142 39 Q133 64 118 78', 'M137 55 L191 53', 'M155 56 L166 74', 'M161 91 Q126 104 70 106', 'M66 127 L172 124', 'M53 152 L186 148', 'M115 105 L114 184 Q114 199 143 199 L176 199 Q195 199 195 178'],
+  信: ['M78 47 Q67 86 39 112', 'M62 92 L62 201', 'M122 40 Q142 50 151 68', 'M90 78 L200 75', 'M103 105 L185 103', 'M101 130 L183 129', 'M105 153 L107 199', 'M105 153 L186 151 L182 197', 'M108 195 L183 194'],
+  包: ['M93 41 Q79 73 48 98', 'M83 60 L183 59 Q180 108 170 124 Q166 130 151 121', 'M74 91 L140 89 L138 131', 'M76 130 L140 129', 'M74 130 L74 183 Q74 197 98 198 L172 196 Q191 196 192 175'],
 };
 
 const word = (han, py, meaning, art, action, hint, near) =>
@@ -52,6 +54,7 @@ const phrasePinyin = {
   汽车: 'qì chē', 马车: 'mǎ chē', 自行车: 'zì xíng chē', 车站: 'chē zhàn',
   大米: 'dà mǐ', 玉米: 'yù mǐ', 西瓜: 'xī guā', 黄瓜: 'huáng gua',
   书包: 'shū bāo', 书架: 'shū jià', 铅笔: 'qiān bǐ', 毛笔: 'máo bǐ',
+  信封: 'xìn fēng', 邮票: 'yóu piào', 明信片: 'míng xìn piàn', 邮包: 'yóu bāo',
 };
 const phrase = (han, art, label, extra, alternatives) =>
   ({ han, py: phrasePinyin[han], art, label, extra, alternatives });
@@ -155,7 +158,7 @@ const town = [
       phrase('上楼', 'stairs-up', ['An arrow pointing up the stairs', '箭头从楼梯低处指向高处'], '下', ['stairs-down', 'inside']),
       phrase('下楼', 'stairs-down', ['An arrow pointing down the stairs', '箭头从楼梯高处指向低处'], '上', ['stairs-up', 'inside']),
     ],
-    story: '莓莓猫把彩带放在盒子上面，把纸星星藏在盒子下面。小猫们上楼来帮忙，布置好以后又一起下楼。生日会要开始啦！',
+    story: '莓莓猫把彩带放在盒子上面，把纸星星藏在盒子下面。小猫们上楼来帮忙。它们挂好彩带，又一起下楼。生日会要开始啦！',
   },
   {
     name: '星星屋', nameEn: 'Star House', cat: 'lilac', sticker: '芋圆猫', stickerEn: 'Taro', at: [89.1, 63.1],
@@ -246,7 +249,7 @@ const garden = [
   {
     name: '白云坡', nameEn: 'Cloud Hill', cat: 'cotton', sticker: '棉花猫', stickerEn: 'Cotton', at: [19, 61],
     title: '白云像什么', scene: '☁️🐇',
-    intro: '棉花猫来到山坡上。天上飘着白云，草地上坐着一只白兔。棉花猫拿出白纸，准备画画。',
+    intro: '棉花猫来到山坡上。天上有一朵白云，草地上坐着一只白兔。棉花猫拿出白纸，准备画画。',
     words: [
       word('白', 'bái', 'white', 'white-paper',
         ['Compare 白 with 日. Find the extra slanting stroke above the box.', '和学过的「日」比一比。「白」的上面多了一小撇。指一指白纸，再读一读「白」。'],
@@ -307,7 +310,7 @@ const garden = [
 
 const market = [
   {
-    name: '马车站', nameEn: 'Carriage Stop', cat: 'chestnut', sticker: '栗子猫', stickerEn: 'Chestnut', at: [18, 67],
+    name: '马车站', nameEn: 'Carriage Stop', cat: 'chestnut', sticker: '栗子猫', stickerEn: 'Chestnut', at: [14, 68],
     title: '坐马车去市集', scene: '🐎🛞',
     intro: '栗子猫想去市集。它走到车站，看见一匹马拉着车。原来，今天可以坐马车去！',
     words: [
@@ -327,7 +330,7 @@ const market = [
     story: '栗子猫在车站等朋友。一辆汽车开了过去，一只小猫骑着自行车从旁边经过。这时，一匹马拉着车，慢慢停在栗子猫面前。栗子猫坐上马车。听，马蹄在路上嗒嗒响！没一会儿，它就到了市集。',
   },
   {
-    name: '市集菜摊', nameEn: 'Market Stall', cat: 'millet', sticker: '小米猫', stickerEn: 'Millet', at: [50, 69],
+    name: '市集菜摊', nameEn: 'Market Stall', cat: 'millet', sticker: '小米猫', stickerEn: 'Millet', at: [37, 68],
     title: '给野餐准备吃的', scene: '🌽🍉',
     intro: '小米猫要准备午饭。它来到菜摊，看见一袋大米，还有圆圆的西瓜。你还认得摊上的哪些食物？',
     words: [
@@ -347,7 +350,7 @@ const market = [
     story: '小米猫买了一袋大米，准备煮饭。它还挑了一根玉米、一根黄瓜和一个西瓜。栗子猫帮它把西瓜抬上小推车。午饭好了，它们在树下铺开野餐布。两只小猫吃完了饭，最后一起分西瓜。',
   },
   {
-    name: '绘本屋', nameEn: 'Storybook Nook', cat: 'ink', sticker: '墨墨猫', stickerEn: 'Inky', at: [82, 66],
+    name: '绘本屋', nameEn: 'Storybook Nook', cat: 'ink', sticker: '墨墨猫', stickerEn: 'Inky', at: [62, 68],
     title: '画一本市集小书', scene: '📚✏️',
     intro: '午饭后，墨墨猫请朋友们来绘本屋。它打开书包，拿出一支铅笔。今天看到了什么？我们来把它画进书里吧！',
     words: [
@@ -366,13 +369,33 @@ const market = [
     ],
     story: '墨墨猫从书架上取下一本书。书页还空着。栗子猫用铅笔画了一辆马车，小米猫画了切开的西瓜。墨墨猫用毛笔在封面上写下书名。它把书放进书包，打算带回家读给大家听。',
   },
+  {
+    name: '市集邮局', nameEn: 'Post Office', cat: 'pomelo', sticker: '柚子猫', stickerEn: 'Pomelo', at: [86, 68],
+    title: '把故事寄给朋友', scene: '📮📦',
+    intro: '柚子猫来到邮局门口。它带着朋友们做的小书，想把书寄出去。它还要写一张明信片。',
+    words: [
+      word('信', 'xìn', 'letter', 'mail-envelope',
+        ['Point to the letter. Look for a thin person shape on the left of 信 and 言 on the right.', '指一指信。看看「信」的左边有没有单人旁，右边是不是一个「言」字。'],
+        ['Look for the person on the left and 言 on the right.', '找左边是单人旁、右边是「言」的字。'], ['言', '住', '认']),
+      word('包', 'bāo', 'to wrap / package', 'mail-parcel',
+        ['Pretend to wrap a book with paper. Find the curved strokes that wrap around the inside of 包.', '假装用纸把书包起来。看看「包」的外面是哪两笔，里面最后一笔往哪边弯。'],
+        ['Look for a bent hook outside and a curved hook at the bottom.', '找外面有横折钩、底下有竖弯钩的字。'], ['句', '勺', '勾']),
+    ],
+    phrases: [
+      phrase('信封', 'mail-envelope', ['An open paper envelope with a blank sheet inside', '打开的纸信封，露出一角白纸'], '票', ['postage-stamp', 'mail-parcel']),
+      phrase('邮票', 'postage-stamp', ['A small purple postage stamp with perforated white edges', '一枚边缘有白色齿孔的紫色邮票'], '信', ['mail-envelope', 'mail-parcel']),
+      phrase('明信片', 'postcard', ['A rectangular card with a seaside picture on the front', '一张正面画着海边风景的长方形卡片'], '邮', ['mail-envelope', 'mail-parcel']),
+      phrase('邮包', 'mail-parcel', ['A cardboard parcel wrapped with string', '一个用细绳扎好的纸盒包裹'], '片', ['postcard', 'postage-stamp']),
+    ],
+    story: '柚子猫拿来一张纸，把绘本包好，做成一个邮包。它在明信片上画了一辆小马车，又写了几句话。它把明信片放进信封，在右上角贴了一枚邮票。邮局的阿姨收好信封和邮包，说它们很快就能送到朋友手里。',
+  },
 ];
 
 export const volumes = [
   { title: '小镇篇', titleEn: 'Town', image: '/assets/town.svg', lessons: town },
   { title: '郊游篇', titleEn: 'Countryside', image: '/assets/countryside.jpg', lessons: countryside },
   { title: '花园篇', titleEn: 'Garden', image: '/assets/garden.svg', lessons: garden },
-  { title: '市集篇', titleEn: 'Market', image: '/assets/market.jpg', lessons: market },
+  { title: '市集篇', titleEn: 'Market', image: '/assets/market-post.jpg', lessons: market },
 ];
 export const lessons = volumes.flatMap((volume, index) =>
   volume.lessons.map((lesson) => ({ ...lesson, volume: index })));
@@ -395,5 +418,5 @@ export const activityPrompts = {
   match: { text: '读一读卡片上的词。想一想，这个词说的是哪张图？', track: '/audio/instructions/match.mp3' },
   story: { text: '我们一起读故事。点亮起来的汉字，还能听到它的读音。', track: '/audio/instructions/story.mp3' },
   stickers: { text: '点一点贴纸，把猫猫和小车贴到轮廓上。', track: '/audio/instructions/stickers.mp3' },
-  drive: { text: '听清要找的字或词，再点一下它所在的车道。', track: '/audio/instructions/drive.mp3' },
+  drive: { text: '先听一听。再点有这个字或词的车道。', track: '/audio/instructions/drive.mp3' },
 };

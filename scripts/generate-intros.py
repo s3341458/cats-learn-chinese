@@ -1,12 +1,14 @@
 """Render Mandarin narration MP3s. See README for setup."""
 
 import argparse
+from functools import partial
 import json
 from pathlib import Path
 import re
 import shutil
 import subprocess
 import tempfile
+from xml.sax.saxutils import escape
 
 import numpy as np
 import soundfile as sf
@@ -43,7 +45,7 @@ def import_native(directory, word, source):
     print(f"{word['text']} ({word['py']}) <- {source['file']}", flush=True)
 
 
-def trim_sentence(audio, rate=RATE):
+def trim_recording(audio, rate=RATE):
     """Keep a little room before and after the audible speech."""
     audible = np.flatnonzero(np.abs(audio) > 0.007)
     if not len(audible):
@@ -79,34 +81,62 @@ def render(pipeline, text, track, speed, pause):
             if not clips:
                 raise ValueError(f"No audio generated for {sentence!r}")
             clip, rate = np.concatenate(clips), RATE
-        pieces.append(trim_sentence(clip, rate))
+        pieces.append(trim_recording(clip, rate))
         pieces.append(np.zeros(int(rate * pause), dtype=np.float32))
 
-    audio = np.concatenate(pieces)
+    save_audio(np.concatenate(pieces), rate, track)
+
+
+def render_polly(text, track, speed, pause):
+    """Synthesize the whole passage in one request so the voice keeps its phrasing."""
+    rate = 16_000
+    ssml = f'<speak><prosody rate="{round(speed * 100)}%">{escape(text)}</prosody></speak>'
+    with tempfile.TemporaryDirectory(prefix="cats-polly-") as directory:
+        recording = Path(directory) / "speech.pcm"
+        subprocess.run([
+            "aws", "polly", "synthesize-speech", "--region", "us-east-1",
+            "--engine", "neural", "--voice-id", "Zhiyu", "--language-code", "cmn-CN",
+            "--output-format", "pcm", "--sample-rate", str(rate),
+            "--text-type", "ssml", "--text", ssml, str(recording), "--no-cli-pager",
+        ], stdout=subprocess.DEVNULL, check=True)
+        clip = np.fromfile(recording, dtype="<i2").astype(np.float32) / 32768
+    audio = np.concatenate((
+        np.zeros(int(rate * 0.08), dtype=np.float32),
+        trim_recording(clip, rate),
+        np.zeros(int(rate * pause), dtype=np.float32),
+    ))
+    save_audio(audio, rate, track)
+
+
+def save_audio(audio, rate, track):
     audio *= 0.86 / np.max(np.abs(audio))
     path = ROOT / "dist" / track.lstrip("/")
     path.parent.mkdir(parents=True, exist_ok=True)
-    sf.write(path, audio, rate, format="MP3", subtype="MPEG_LAYER_III",
-             bitrate_mode="VARIABLE", compression_level=0.45)
-    print(f"{path.name}: {len(audio) / rate:.1f}s", flush=True)
+    with tempfile.TemporaryDirectory(dir=path.parent) as directory:
+        encoded = Path(directory) / path.name
+        sf.write(encoded, audio, rate, format="MP3", subtype="MPEG_LAYER_III",
+                 bitrate_mode="VARIABLE", compression_level=0.45)
+        encoded.replace(path)
+    print(f"{track}: {len(audio) / rate:.1f}s", flush=True)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--engine", choices=("system", "kokoro"), default="system",
-                        help="system uses the installed macOS Tingting Mandarin voice")
+    parser.add_argument("--engine", choices=("system", "kokoro", "polly"), default="system",
+                        help="system uses macOS Tingting; polly uses neural Mandarin Zhiyu")
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--trace-only", action="store_true", help="render only the writing prompt")
     mode.add_argument("--characters-only", action="store_true", help="render only the character recordings")
     mode.add_argument("--practice-only", action="store_true", help="render words and activity instructions")
     mode.add_argument("--narration-only", action="store_true", help="render only story intros and story pages")
+    mode.add_argument("--instructions-only", action="store_true", help="render all shared activity instructions")
     mode.add_argument("--import-native", type=Path, metavar="FLAC_DIR",
                       help="import the selected lessons' human recordings from the Caen FLAC collection")
     parser.add_argument("--lesson", action="append", type=int,
                         help="render only this 1-based lesson number; repeat for several lessons")
     args = parser.parse_args()
-    if args.lesson and args.trace_only:
-        parser.error("--trace-only is a shared prompt; do not combine it with --lesson")
+    if args.lesson and (args.trace_only or args.instructions_only):
+        parser.error("Shared instructions cannot be combined with --lesson")
     data = json.loads(subprocess.check_output([
         "node", "--input-type=module", "-e",
         "import { activityPrompts, introTrack, lessons, storyTrack, traceGuide, wordTrack } from './dist/lessons.js'; "
@@ -135,6 +165,9 @@ def main():
     if args.engine == "system":
         if not shutil.which("say"):
             parser.error("The system engine requires macOS say. Use --engine kokoro on other systems.")
+    elif args.engine == "polly":
+        if not shutil.which("aws"):
+            parser.error("The polly engine requires the AWS CLI.")
     else:
         from kokoro import KPipeline
         from pypinyin import load_phrases_dict
@@ -145,26 +178,32 @@ def main():
             phrase["text"]: [[syllable] for syllable in phrase["py"].split()]
             for phrase in data["phrases"]
         })
+    render_track = render_polly if args.engine == "polly" else partial(render, pipeline)
+    prompt_speed = 0.88 if args.engine == "polly" else 0.80
+    if args.instructions_only:
+        for prompt in [*data["instructions"], data["traceGuide"]]:
+            render_track(prompt["text"], prompt["track"], speed=prompt_speed, pause=0.30)
+        return
     for group in ("characters", "phrases"):
         data[group] = [word for word in data[group] if word["text"] not in native]
     if not args.trace_only and not args.characters_only:
         if not args.practice_only:
             for intro in data["intros"]:
-                render(pipeline, intro["text"], intro["track"], speed=0.88, pause=0.23)
+                render_track(intro["text"], intro["track"], speed=0.88, pause=0.23)
             for story in data["stories"]:
-                render(pipeline, story["text"], story["track"], speed=0.85, pause=0.28)
+                render_track(story["text"], story["track"], speed=0.85, pause=0.28)
         if not args.narration_only:
             for phrase in data["phrases"]:
                 print(f'{phrase["text"]} ({phrase["py"]})', flush=True)
-                render(pipeline, phrase["text"], phrase["track"], speed=0.76, pause=0.25)
+                render_track(phrase["text"], phrase["track"], speed=0.76, pause=0.25)
             for prompt in data["instructions"]:
-                render(pipeline, prompt["text"], prompt["track"], speed=0.80, pause=0.30)
+                render_track(prompt["text"], prompt["track"], speed=prompt_speed, pause=0.30)
     if not (args.trace_only or args.practice_only or args.narration_only):
         for word in data["characters"]:
-            render(pipeline, word["text"], word["track"], speed=0.77, pause=0.20)
+            render_track(word["text"], word["track"], speed=0.77, pause=0.20)
     if not (args.characters_only or args.practice_only or args.narration_only or args.lesson):
         guide = data["traceGuide"]
-        render(pipeline, guide["text"], guide["track"], speed=0.79, pause=0.36)
+        render_track(guide["text"], guide["track"], speed=prompt_speed if args.engine == "polly" else 0.79, pause=0.36)
 
 
 if __name__ == "__main__":

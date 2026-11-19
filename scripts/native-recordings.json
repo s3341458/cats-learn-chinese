@@ -56,5 +56,11 @@
   "书包": {"py": "shū bāo", "file": "cmn-ec0d6628.flac"},
   "书架": {"py": "shū jià", "file": "cmn-296fc9b4.flac"},
   "铅笔": {"py": "qiān bǐ", "file": "cmn-95d592bd.flac"},
-  "毛笔": {"py": "máo bǐ", "file": "cmn-b0945543.flac"}
+  "毛笔": {"py": "máo bǐ", "file": "cmn-b0945543.flac"},
+  "信": {"py": "xìn", "file": "cmn-93268067.flac"},
+  "包": {"py": "bāo", "file": "cmn-5a8c6bb1.flac"},
+  "信封": {"py": "xìn fēng", "file": "cmn-8a0416d7.flac"},
+  "邮票": {"py": "yóu piào", "file": "cmn-41cbc37e.flac"},
+  "明信片": {"py": "míng xìn piàn", "file": "cmn-54cc99b1.flac"},
+  "邮包": {"py": "yóu bāo", "file": "cmn-43d6d48e.flac"}
 }

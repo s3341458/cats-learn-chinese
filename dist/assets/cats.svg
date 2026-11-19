@@ -25,6 +25,7 @@
   <g id="chestnut"><use href="#face" fill="#cb967f"/></g>
   <g id="millet"><use href="#face" fill="#efc787"/></g>
   <g id="ink"><use href="#face" fill="#aab4d6"/></g>
+  <g id="pomelo"><use href="#face" fill="#e9b97a"/></g>
 </defs>
 <use href="#tangerine"/>
 </svg>
