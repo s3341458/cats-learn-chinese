@@ -45,7 +45,16 @@ for (const lesson of lessons) {
   }
 }
 for (const path of audio) assert.ok(statSync(asset(path)).size > 1000, `Missing or empty recording: ${path}`);
-const vocabulary = new Map(lessons.flatMap(({ words, phrases }) => [...words, ...phrases].map(word => [word.han, word])));
+assert.equal(seenCharacters.size, 100, 'The course has 100 distinct target characters');
+for (const han of seenCharacters) assert.ok(nativeRecordings[han], `Missing native reading: ${han}`);
+const vocabulary = new Map();
+for (const { words, phrases } of lessons) {
+  for (const word of [...words, ...phrases]) {
+    const previous = vocabulary.get(word.han);
+    assert.equal(word.py, previous?.py ?? word.py, `Shared audio has inconsistent pinyin: ${word.han}`);
+    vocabulary.set(word.han, word);
+  }
+}
 for (const [han, source] of Object.entries(nativeRecordings)) {
   const word = vocabulary.get(han);
   assert.equal(word?.py, source.py, `Native recording pinyin: ${han}`);

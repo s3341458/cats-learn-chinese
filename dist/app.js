@@ -1,5 +1,5 @@
 import { activityPrompts, introTrack, lessons, storyTrack, traceGuide, volumes, wordTrack } from './lessons.js';
-import { availability, dayAfter, dueCharacters, recordAnswer, save, state } from './progress.js';
+import { availability, dayAfter, recordAnswer, reviewCharacters, save, state } from './progress.js';
 import { setupTracing } from './tracing.js';
 
 const $ = (id) => document.getElementById(id);
@@ -141,10 +141,15 @@ function showHome(opened) {
 
 function renderMap() {
   const count = state.completed.length;
+  const learnedCount = lessons.slice(0, count).reduce((total, lesson) => total + lesson.words.length, 0);
   const volume = volumes[activeVolume];
   const currentVolume = lessons[nextStop()].volume;
   $('album-count').textContent = `${count} / ${lessons.length}`;
   $('progress-count').textContent = `${count} / ${lessons.length}`;
+  $('character-progress').textContent = localize(
+    `${learnedCount} / ${characterCount} characters learned`,
+    `已学 ${learnedCount} / ${characterCount} 字`,
+  );
   $('course-progress').setAttribute('aria-valuemax', lessons.length);
   $('course-progress').setAttribute('aria-valuenow', count);
   $('progress-fill').style.width = `${count / lessons.length * 100}%`;
@@ -224,7 +229,7 @@ function showGuide() {
         return `<li><b>${lessonName(lesson)} · ${hanzi(lesson.words.map(({ han }) => han).join('、'))}</b><span>${caption}</span>${action}</li>`;
       }).join('')}</ol>
       <h3>${localize('Reading progress', '认读记录')}</h3>
-      <p>${localize('Characters due for review can appear in later listening activities.', '该复习的汉字会穿插到之后的听音题。')}</p>
+      <p>${localize('Listening mixes in two characters from earlier stops, with priority for reviews that are due.', '后续听音题会穿插两个学过的字，优先复习到期的字。')}</p>
       ${review.length ? `<div class="review-wrap"><table><thead><tr>
         <th>${localize('Character or word', '字词')}</th><th>${localize('Familiarity', '熟悉度')}</th>
         <th>${localize('Next review', '下次复习')}</th><th>${localize('First try', '一次答对')}</th></tr></thead>
@@ -246,6 +251,8 @@ const artSheets = [
   ['cards-outdoors', ['fish', 'kitten', 'gate', 'diary', 'mountain', 'round-stone', 'stone-bridge', 'trail', 'paddy', 'earth', 'potato', 'mud-wall']],
   ['cards-market', ['passenger-car', 'horse-carriage', 'bicycle', 'bus-stop', 'raw-rice', 'corn-cob', 'watermelon', 'cucumber', 'school-bag', 'bookshelf', 'pencil', 'brush']],
   ['cards-post', ['mail-envelope', 'postage-stamp', 'postcard', 'mail-parcel'], 2],
+  ['home-detail', ['house-window', 'curtains', 'windowsill', 'bed-sheet', 'pillow', 'cloth-bag', 'wash-towel', 'scallions', 'red-tea', 'fish-soup', 'hair-comb', 'empty-bowl']],
+  ['story-detail', ['chalkboard', 'long-jump', 'jump-rope', 'stage', 'flute', 'willow', 'bamboo', 'bookshop', 'tablet', 'puppy', 'shepherd-dog', 'black-bear']],
 ];
 const pictures = new Map(artSheets.flatMap(([sheet, items, columns = 4]) => {
   const rows = items.length / columns;
@@ -326,7 +333,7 @@ function begin(index, resume = true) {
   const reviewWords = Array.isArray(saved?.reviewWords)
     ? saved.reviewWords.slice(0, 2).map((han) => lessons.slice(0, index).flatMap(({ words }) => words)
       .find((word) => word.han === han)).filter(Boolean)
-    : dueCharacters(lesson);
+    : reviewCharacters(index);
   const questions = [first, first, second, second, ...reviewWords, first, second];
   const stage = stages.includes(saved?.stage) ? saved.stage : 'film';
   run = {
@@ -566,11 +573,14 @@ function quizFeedback(label) {
 
 function showListening() {
   const question = run.questions[run.round];
+  const reviewing = run.reviewWords.includes(question);
   return chapter(localize('Listen and find the character', '听一听，找一找'), `
     ${rounds(run.round, run.questions.length)}
     ${secondary(localize('Hear the character', '听这个字'), 'hear-question', 'sound')}
     <div class="tile-row">${run.choices.map((han, i) => tile(han, i)).join('')}</div>
-    ${quizFeedback(localize('Tap the character you hear.', '听一听，然后点出你听到的字。'))}
+    ${quizFeedback(reviewing
+      ? localize('Review a character from an earlier stop.', '听一听，复习之前学过的字。')
+      : localize('Tap the character you hear.', '听一听，然后点出你听到的字。'))}
     <button class="text-button" data-action="show-hint">${localize('Show pinyin hint', '用拼音提示')}</button>`,
     localize(`If your child needs help, give them this hint. ${question.hint[0]}`, `需要帮忙时，想一想：${question.hint[1]}`));
 }
@@ -707,7 +717,7 @@ function showFinish() {
     <div class="finish-stamp">${icon('check')} ${stopName(run.index)}</div>
     <h2 id="scene-title" tabindex="-1">${title}</h2>
     <div class="finish-cats">${endOfVolume
-      ? (last ? lessons : route.lessons).map((item) => cat(item.cat)).join('')
+      ? route.lessons.map((item) => cat(item.cat)).join('')
       : `${run.index ? cat(lesson.cat) : sprite('cat')}${sprite('car')}`}</div>
     <p>${last ? localize(
       `You read ${lessons.length} stories, learned ${characterCount} characters, and collected every sticker.`,
@@ -758,9 +768,10 @@ function nextItem() {
     return advance();
   }
   run.round++;
+  const keepAudio = run.stage === 'listen' && activeTrack === wordTrack(run.questions[run.round]);
   resetRound();
   checkpoint();
-  renderScene();
+  renderScene(true, { keepAudio });
   playStageCue();
 }
 
@@ -838,7 +849,8 @@ function choose(index, button) {
     return;
   }
   run.hit = true;
-  recordAnswer(stage === 'listen' ? target : currentPhrase().han, run.missed.size === 0);
+  const reviewStop = stage === 'listen' && run.reviewWords.includes(run.questions[run.round]) ? run.index : undefined;
+  recordAnswer(stage === 'listen' ? target : currentPhrase().han, run.missed.size === 0, reviewStop);
   scene.querySelectorAll('[data-pick]').forEach((option) => { option.disabled = true; });
   button.classList.remove('miss');
   button.classList.add('hit');

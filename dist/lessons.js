@@ -1,3 +1,5 @@
+import { expandedVolumes } from './expanded-lessons.js';
+
 // Each path follows the writing direction of one stroke on a 240 × 240 grid.
 const strokes = {
   人: ['M130 44 Q129 129 49 196', 'M126 95 Q154 157 202 194'],
@@ -396,6 +398,7 @@ export const volumes = [
   { title: '郊游篇', titleEn: 'Countryside', image: '/assets/countryside.jpg', lessons: countryside },
   { title: '花园篇', titleEn: 'Garden', image: '/assets/garden.svg', lessons: garden },
   { title: '市集篇', titleEn: 'Market', image: '/assets/market-post.jpg', lessons: market },
+  ...expandedVolumes,
 ];
 export const lessons = volumes.flatMap((volume, index) =>
   volume.lessons.map((lesson) => ({ ...lesson, volume: index })));
@@ -413,7 +416,7 @@ export const traceGuide = {
 export const activityPrompts = {
   picture: { text: '点一点图片，看看它会变成什么字。', track: '/audio/instructions/picture.mp3' },
   trace: traceGuide,
-  listen: { text: '听一听，再点出你听到的汉字。', track: '/audio/instructions/listen.mp3' },
+  listen: { text: '先听一听，再点出你听到的字。有时还会听到以前学过的字。', track: '/audio/instructions/listen.mp3' },
   build: { text: '先听完整个词，再按顺序点出词里的汉字。', track: '/audio/instructions/build.mp3' },
   match: { text: '读一读卡片上的词。想一想，这个词说的是哪张图？', track: '/audio/instructions/match.mp3' },
   story: { text: '我们一起读故事。点亮起来的汉字，还能听到它的读音。', track: '/audio/instructions/story.mp3' },

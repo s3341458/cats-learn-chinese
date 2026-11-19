@@ -180,12 +180,13 @@ def main():
         })
     render_track = render_polly if args.engine == "polly" else partial(render, pipeline)
     prompt_speed = 0.88 if args.engine == "polly" else 0.80
+    word_speed = 0.88 if args.engine == "polly" else 0.76
     if args.instructions_only:
         for prompt in [*data["instructions"], data["traceGuide"]]:
             render_track(prompt["text"], prompt["track"], speed=prompt_speed, pause=0.30)
         return
     for group in ("characters", "phrases"):
-        data[group] = [word for word in data[group] if word["text"] not in native]
+        data[group] = {word["track"]: word for word in data[group] if word["text"] not in native}.values()
     if not args.trace_only and not args.characters_only:
         if not args.practice_only:
             for intro in data["intros"]:
@@ -195,7 +196,7 @@ def main():
         if not args.narration_only:
             for phrase in data["phrases"]:
                 print(f'{phrase["text"]} ({phrase["py"]})', flush=True)
-                render_track(phrase["text"], phrase["track"], speed=0.76, pause=0.25)
+                render_track(phrase["text"], phrase["track"], speed=word_speed, pause=0.25)
             for prompt in data["instructions"]:
                 render_track(prompt["text"], prompt["track"], speed=prompt_speed, pause=0.30)
     if not (args.trace_only or args.practice_only or args.narration_only):

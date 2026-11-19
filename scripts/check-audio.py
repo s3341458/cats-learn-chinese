@@ -55,7 +55,7 @@ def main():
                              cpu_threads=4, download_root=args.model_cache)
 
     results = []
-    for entry in entries:
+    for entry in {entry["path"]: entry for entry in entries}.values():
         path = ROOT / "dist" / entry["path"].lstrip("/")
         samples, rate = sf.read(path, dtype="float32")
         peak = float(np.max(np.abs(samples)))

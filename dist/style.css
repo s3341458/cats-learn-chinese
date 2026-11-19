@@ -31,6 +31,7 @@ h1 em{color:var(--clay);font-style:normal}
 .progress-heading span{margin-left:auto;color:#795a52;font-size:12px;white-space:nowrap}
 .progress-track{height:8px;border-radius:8px;background:#eee3d3;overflow:hidden}
 #progress-fill{height:100%;width:0;background:#cd785b;border-radius:inherit;transition:width .35s ease}
+.character-progress{margin:5px 0 0;color:var(--muted);font-size:12px}
 .map-section{border:1px solid #e2d3ba;border-radius:23px;overflow:hidden;background:#fffaf1;box-shadow:0 5px 0 #eee4d4}
 .map{position:relative;aspect-ratio:1140/460;isolation:isolate}
 .landscape{display:block;width:100%;height:auto}
