@@ -1,4 +1,4 @@
-import { activityPrompts, introTrack, lessons, storyTrack, traceGuide, volumes, wordTrack } from './lessons.js';
+import { activityPrompts, introTrack, lessons, storyReadings, storyTrack, traceGuide, volumes, wordTrack } from './lessons.js';
 import { availability, dayAfter, recordAnswer, reviewCharacters, save, state } from './progress.js';
 import { setupTracing } from './tracing.js';
 
@@ -27,7 +27,6 @@ const stickerName = (lesson) => localize(lesson.stickerEn, lesson.sticker);
 const volumeName = (volume) => localize(volume.titleEn, volume.title);
 const stopName = (index) => localize(`Stop ${index + 1}`, `第 ${index + 1} 站`);
 const hanzi = (text) => `<span lang="zh-Hans">${text}</span>`;
-const characterLessons = new Map(lessons.flatMap(({ words }) => words.map((word) => [word.han, word])));
 const chromeText = [...document.querySelectorAll('[data-zh]')].map((element) =>
   [element, element.textContent, element.dataset.zh]);
 const chromeLabels = [...document.querySelectorAll('[data-zh-label]')].map((element) =>
@@ -649,10 +648,9 @@ function showMatch() {
     localize('Let your child try reading first. They can tap “Hear the word” for help.', '让孩子先自己读卡片。卡住时，可以点「听这个词」。'));
 }
 
-function storyText(lesson) {
-  const familiar = new Set(lessons.slice(0, run.index + 1).flatMap(({ words }) => words.map(({ han }) => han)));
-  return [...lesson.story].map((char) => familiar.has(char)
-    ? `<button class="story-hanzi" data-say="${char}">${char}</button>` : char).join('');
+function storyText() {
+  return storyReadings(run.index).map(token => typeof token === 'string' ? token :
+    `<button class="story-hanzi" data-say="${token.han}" data-py="${token.py}">${token.han}</button>`).join('');
 }
 
 function showStory() {
@@ -660,10 +658,10 @@ function showStory() {
   return chapter(localize('Read the story together', '一起读绘本'), `
     <div class="spread">
       <figure class="storybook-art" ${chapterLandscape(lesson)}>${sprite('car')}<span>${art(lesson.scene, lesson)}</span></figure>
-      <article class="storybook-text" lang="zh-Hans"><h3>${lesson.title}</h3><p>${storyText(lesson)}</p></article>
+      <article class="storybook-text" lang="zh-Hans"><h3>${lesson.title}</h3><p>${storyText()}</p></article>
     </div>
     <div class="panel-actions">${secondary(localize('Read the page aloud', '朗读整页'), 'read-story', 'sound')}${primary(localize('Done reading', '读完了'), 'advance')}</div>`,
-    localize('Pause at each yellow character and let your child read it. Tap a character to hear it.', '大人读故事，读到黄色汉字就停一停，让孩子接着念。点任意黄色汉字可以听它的读音。'));
+    localize('Pause at a highlighted character or word and let your child read it. Tap to hear it aloud.', '读到黄色的字或词时停一停，让孩子接着念。点一下就能听到它在故事里的读音。'));
 }
 
 function showStickers() {
@@ -1086,7 +1084,7 @@ scene.addEventListener('click', (event) => {
   const playsAudio = say || action?.startsWith('hear-') ||
     ['play-film', 'read-story', 'start-drive'].includes(action);
   if (playsAudio && !state.sound) setSound(true);
-  if (say) return hearVocabulary(characterLessons.get(say), say);
+  if (say) return hearVocabulary({ han: say, py: button.dataset.py }, say);
   switch (action) {
     case 'home':
       journey.close();

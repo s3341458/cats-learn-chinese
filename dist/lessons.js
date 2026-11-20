@@ -410,6 +410,25 @@ export const storyTrack = ({ cat }) => `/audio/story/${cat}.mp3`;
 export const wordTrack = ({ han }) =>
   `/audio/words/${[...han].map((char) => char.codePointAt(0).toString(16)).join('-')}.mp3`;
 
+export function storyReadings(index) {
+  const learned = new Map(lessons.slice(0, index + 1).flatMap(({ words }) => words.map(w => [w.han, w])));
+  // A familiar character can have a different tone or reading inside a word.
+  const phrases = lessons.flatMap(lesson => lesson.phrases).filter(({ han, py }) => {
+    const syllables = py.split(' ');
+    return [...han].some((char, i) => learned.has(char) && learned.get(char).py !== syllables[i]);
+  }).sort((a, b) => b.han.length - a.han.length);
+
+  const tokens = [];
+  let remaining = lessons[index].story;
+  while (remaining) {
+    const phrase = phrases.find(({ han }) => remaining.startsWith(han));
+    const text = phrase?.han ?? String.fromCodePoint(remaining.codePointAt(0));
+    tokens.push(phrase ?? learned.get(text) ?? text);
+    remaining = remaining.slice(text.length);
+  }
+  return tokens;
+}
+
 export const traceGuide = {
   text: '先把手指放在亮点上。再沿着灰线，慢慢写。',
   track: '/audio/instructions/trace.mp3',
@@ -421,7 +440,7 @@ export const activityPrompts = {
   listen: { text: '先听一听，再点出你听到的字。有时还会听到以前学过的字。', track: '/audio/instructions/listen.mp3' },
   build: { text: '先听完整个词，再按顺序点出词里的汉字。', track: '/audio/instructions/build.mp3' },
   match: { text: '读一读卡片上的词。想一想，这个词说的是哪张图？', track: '/audio/instructions/match.mp3' },
-  story: { text: '我们一起读故事。点亮起来的汉字，还能听到它的读音。', track: '/audio/instructions/story.mp3' },
+  story: { text: '我们一起读故事。点一点亮起来的字或词，听听它在故事里怎么读。', track: '/audio/instructions/story.mp3' },
   stickers: { text: '点一点贴纸，把猫猫和小车贴到轮廓上。', track: '/audio/instructions/stickers.mp3' },
   drive: { text: '先听一听。再点有这个字或词的车道。', track: '/audio/instructions/drive.mp3' },
 };

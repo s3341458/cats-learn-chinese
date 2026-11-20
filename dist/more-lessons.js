@@ -37,7 +37,7 @@ export const moreVolumes = [
       ['黑猫', 'hēi māo', '🐈‍⬛', 'A black cat', '一只黑猫'],
       ['紫花', 'zǐ huā', '🪻', 'Purple flowers', '几串紫花'],
       ['紫葡萄', 'zǐ pú tao', '🍇', 'Purple grapes', '一串紫葡萄'],
-    ], '小猫带来一篮颜色很深的东西。教室里的朋友要找出哪些是黑色，哪些是紫色。',
+    ], '小猫把篮子放到桌上。它请朋友找一找，哪些东西是黑色的，哪些是紫色的？',
     '一只黑猫从黑板旁走过。窗边有紫花，桌上还有一串紫葡萄。小猫把紫花放到窗台上，阳光一照，花瓣的紫色更清楚了。'),
     lesson('orange-pink', '暖色果汁摊', 'Warm Colors at the Juice Stand', '橙露', 'Citrus', [
       ['橙', 'chéng', 'orange', '🟠', '登树桃', '左边是木字旁，右边是「登」。'],
@@ -70,7 +70,7 @@ export const moreVolumes = [
       ['苹果树', 'píng guǒ shù', '🌳🍏', 'An apple tree with green apples', '一棵结了青苹果的树'],
       ['果汁', 'guǒ zhī', '🧃', 'A carton of fruit juice', '一盒果汁'],
     ], '果园的门开了。小猫带着空篮子，想挑几个成熟的苹果。',
-    '苹果树底下有一条窄窄的小路。小猫踮起脚摘了三个苹果，把它们和梨、葡萄一起放进水果篮。回家后，它挑出一个熟苹果做果汁。'),
+    '小路尽头有一棵苹果树。小猫伸手摘下三个苹果，把苹果、梨和葡萄一起放进水果篮。回家后，它用一个苹果做了一杯果汁。'),
     lesson('scent-banana', '香蕉熟了', 'Ripe Bananas', '蕉蕉', 'Banana', [
       ['香', 'xiāng', 'fragrant', '🌼', '禾日音', '「香」上面是「禾」，下面是「日」。'],
       ['蕉', 'jiāo', 'banana', '🍌', '草蒸黑', '找草字头和最下面的四点。'],
@@ -288,7 +288,7 @@ export const moreVolumes = [
       ['擦窗', 'cā chuāng', '🪟🧽', 'A cloth wiping a window', '正在擦窗玻璃的布'],
       ['橡皮擦', 'xiàng pí cā', '✏️🟪', 'A rectangular eraser and a pencil', '铅笔旁一块方方的橡皮擦'],
     ], '窗边有一点灰，地上有几片碎叶。小猫猜，扫和擦分别该用什么工具。',
-    '小猫拿起扫帚扫地，把碎叶扫成一小堆。朋友用湿布擦窗，窗玻璃很快变亮了。它们还找到一块橡皮擦，原来这也是拿来擦东西的。'),
+    '小猫拿来一把扫帚。它从门口开始扫地，把碎叶扫成一小堆。朋友用湿布擦窗，窗玻璃很快变亮了。它们还找到一块橡皮擦，原来这也是拿来擦东西的。'),
     lesson('table-chair', '桌子旁留个位', 'A Seat by the Table', '栗椅', 'Little Seat', [
       ['桌', 'zhuō', 'table', '🖥️', '早木课', '看看最下面有没有学过的「木」。'],
       ['椅', 'yǐ', 'chair', '🪑', '树骑机', '左边是木字旁，右边是「奇」。'],
@@ -349,7 +349,7 @@ export const moreVolumes = [
       ['泳帽', 'yǒng mào', '🧢💧', 'A cap for swimming', '一顶下水时戴的泳帽'],
       ['泳圈', 'yǒng quān', '🛟', 'A floating swim ring', '一个漂在水上的泳圈'],
       ['毛巾', 'máo jīn', 'wash-towel', 'A folded towel', '一条叠好的毛巾'],
-    ], '小猫到游泳池边，先找好毛巾和泳帽。水面上漂着一个圆圆的泳圈。',
+    ], '小猫来到游泳池，把泳帽戴在头上。它看见一个圆圆的泳圈浮在水面上。',
     '教练在浅水处等小猫。小猫戴上泳帽，跟着教练慢慢练游泳。上岸以后，它用毛巾擦干身体，把泳圈放回原来的地方。'),
     lesson('slide-wheel', '带轮子的小车', 'Wheels in the Park', '轮轮', 'Wheely', [
       ['滑', 'huá', 'slide', '🛝', '骨河油', '左边是三点水，右边是「骨」。'],
@@ -401,7 +401,7 @@ export const moreVolumes = [
       ['相同', 'xiāng tóng', '🟢🟢', 'Two identical green circles', '两个一模一样的绿圆圈'],
       ['班级', 'bān jí', '🏫👫', 'A group of children in their classroom', '同一个班的小朋友'],
       ['班牌', 'bān pái', '🏫🔖', 'A class sign beside a classroom door', '教室门边的班牌'],
-    ], '两只小猫站在教室门口。它们看了看门边的班牌，发现自己在同一个班。',
+    ], '两只小猫一起去上学。它们在门口看见了自己的班牌，原来它们在同一个班！',
     '同学们把画挂到墙上。小猫和朋友画了颜色相同的圆圈，却给圆圈添了不同的表情。这些画摆成一排，成了班级里的一面笑脸墙。'),
     lesson('write-character', '写下自己的名字', 'Writing My Name', '小楷', 'Brush Tip', [
       ['写', 'xiě', 'write', '✍️', '与字宝', '上面是没有点的盖子，下面是「与」。'],
@@ -422,7 +422,7 @@ export const moreVolumes = [
       ['数一数', 'shǔ yi shǔ', '☝️🔢', 'A finger counting a series of numbers', '边指边数一数'],
       ['数字', 'shù zì', '1️⃣2️⃣3️⃣', 'The numerals one, two, and three', '数字一、二、三'],
     ], '小猫从果篮拿出几个苹果。它想数一数，桌上总共有多少个。',
-    '朋友指着苹果一个个数过去，小猫把数字写下来。老师拿来一把算盘，拨几颗珠子给它看。它们用这个办法做了一道加法算术题。'),
+    '朋友数苹果，小猫在旁边把数字写下来。老师拿来一把算盘，拨几颗珠子给它看。它们用这个办法做了一道加法算术题。'),
   ]),
   book('nature', '四季篇', 'Weather and Seasons', [
     lesson('sun-cloud', '今天是晴天吗', 'Is It Sunny Today?', '晴晴', 'Sunshine', [
