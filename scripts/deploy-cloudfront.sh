@@ -32,10 +32,5 @@ stack_output() {
 
 bucket=$(stack_output ContentBucket)
 distribution=$(stack_output DistributionId)
-aws s3 cp dist/audio/credits.txt "s3://$bucket/audio/credits.txt" --region "$region" \
-  --content-type 'text/plain; charset=utf-8' --only-show-errors --no-progress
-aws s3 sync dist/ "s3://$bucket/" --region "$region" --exclude 'audio/credits.txt' --only-show-errors --no-progress
-invalidation=$(aws cloudfront create-invalidation --distribution-id "$distribution" \
-  --paths '/*' --query Invalidation.Id --output text)
-aws cloudfront wait invalidation-completed --distribution-id "$distribution" --id "$invalidation"
+bash scripts/publish-cloudfront.sh "$bucket" "$distribution"
 stack_output SiteUrl

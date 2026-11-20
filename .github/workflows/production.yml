@@ -1,0 +1,74 @@
+name: Verify and publish
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - run: npm run check
+
+  publish:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: cats-learn-chinese-production
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Check that this commit is still the head of main
+        id: head
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          main_sha=$(gh api "repos/$GITHUB_REPOSITORY/branches/main" --jq '.commit.sha')
+          if [[ "$main_sha" == "$GITHUB_SHA" ]]; then
+            echo 'current=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'A newer main commit superseded this release.'
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.head.outputs.current == 'true'
+        with:
+          persist-credentials: false
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        if: steps.head.outputs.current == 'true'
+        with:
+          role-to-assume: ${{ vars.CATS_DEPLOY_ROLE_ARN }}
+          aws-region: us-east-1
+          allowed-account-ids: '340854501236'
+      - name: Publish to S3 and wait for CloudFront
+        if: steps.head.outputs.current == 'true'
+        env:
+          CONTENT_BUCKET: ${{ vars.CATS_CONTENT_BUCKET }}
+          DISTRIBUTION_ID: ${{ vars.CATS_DISTRIBUTION_ID }}
+        run: bash scripts/publish-cloudfront.sh "$CONTENT_BUCKET" "$DISTRIBUTION_ID"
+      - name: Verify the live site serves this commit
+        if: steps.head.outputs.current == 'true'
+        env:
+          SITE_URL: https://cats-learn-chinese.theyucheng.com
+        run: |
+          curl --fail --silent --show-error --retry 3 --max-time 20 "$SITE_URL/" -o "$RUNNER_TEMP/cats-live"
+          cmp dist/index.html "$RUNNER_TEMP/cats-live"
+          for asset in app.js lessons.js audio/credits.txt; do
+            curl --fail --silent --show-error --retry 3 --max-time 20 "$SITE_URL/$asset" -o "$RUNNER_TEMP/cats-live"
+            cmp "dist/$asset" "$RUNNER_TEMP/cats-live"
+          done

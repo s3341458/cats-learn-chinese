@@ -65,6 +65,10 @@ python scripts/check-audio.py --lesson 17 --transcribe
 
 ## 部署与许可证
 
+合并到 `main` 后，GitHub Actions 会先运行 `npm run check`，再上传到现有 S3 桶，等待 CloudFront 刷新并比对线上文件。PR 会运行课程检查。
+
+生产流水线使用 AWS OIDC 短期凭证。已有 GitHub OIDC 提供商时，在生产账户中部署 `infra/github-actions-deploy.yml`，传入现有站点栈的 `ContentBucket` 和 `DistributionId` 输出，并启用 CloudFormation 的 `CAPABILITY_NAMED_IAM`。在 GitHub 仓库变量中设置 `CATS_DEPLOY_ROLE_ARN`（角色栈输出 `RoleArn`）、`CATS_CONTENT_BUCKET` 和 `CATS_DISTRIBUTION_ID`。该角色只接受本仓库 `main` 的身份，可上传这个站点的文件并刷新它的 CloudFront 分配。
+
 AWS 部署使用 `infra/cloudfront.yml`，由 CloudFront 经 HTTPS 提供私有 S3 中的 `dist/` 静态文件。用管理目标域名公开 Route 53 托管区的 AWS 身份运行：
 
 ```sh
