@@ -53,15 +53,11 @@ python scripts/check-audio.py --lesson 17 --transcribe
 
 猫咪和小车插画由内置 ImageGen 生成，保存在 `dist/assets/kitten-stickers.png`。提示词为绘本水粉与彩铅风格、两张分离的透明贴纸，内容是戴薄荷绿领巾的橘猫和它开的薄荷绿玩具车，只画猫，不加文字或品牌。
 
-郊游地图由内置 ImageGen 生成，保存在 `dist/assets/countryside.jpg`。提示词为横向水粉和彩铅绘本地图，三处停留点分别留给山石、溪水石桥与砖窑、金色稻田和农舍，路边有一只小猫，画面不含文字和编号。
+十册地图和章节背景共用 `dist/assets/oil-*.jpg`。内置 ImageGen 以小镇篇为画风参考，沿用各册原地图的地标和小路布局，绘制成 1140 × 460 的横幅油画。提示词指定细亚麻画布、可见的柔和笔触、薄厚相间的不透明油彩、暖金色晨光和低饱和的橄榄绿、赭黄与天蓝。地图上的站点仍由游戏绘制。
 
 选图题的插画用内置 ImageGen 制作，放在 `dist/assets/cards-town.jpg` 和 `dist/assets/cards-outdoors.jpg`。提示词要求同尺寸的水粉和彩铅绘本图、每格只画题目需要的一个对象或场景、不加文字。每道题的两个干扰选项在 `dist/lessons.js` 中单独列出，避免一张图也能解释成另一个答案。
 
-市集篇的地图 `dist/assets/market.jpg` 和图卡 `dist/assets/cards-market.jpg` 也由内置 ImageGen 制作。地图提示词为水粉和彩铅风格的横向绘本地图，让蜿蜒的小路依次连接马车站、菜摊和绘本屋。图卡提示词为四列三行、每格只画一道题对应的物品或场景。两张图均不含文字。
-
-内置 ImageGen 沿用原市集地图的绘本画风，加入有红色邮筒的邮局，保存在 `dist/assets/market-post.jpg`。邮局的图卡 `dist/assets/cards-post.jpg` 按两列两行排列信封、邮票、明信片和邮包。
-
-后六册的地图由内置 ImageGen 制作，存放在 `dist/assets/reading-*.jpg`。画面以水彩和彩铅描绘房屋、餐食摊位、牧场、学校、河口和街道，保留连续的小路供站点按钮使用。两套补充图卡 `dist/assets/home-detail.jpg` 和 `dist/assets/story-detail.jpg` 采用四列三行，每格画一个物件或动作。
+市集图卡 `dist/assets/cards-market.jpg` 和后六册的补充图卡 `dist/assets/home-detail.jpg`、`dist/assets/story-detail.jpg` 每张四列三行，每格画一个物件、场景或动作。邮局图卡 `dist/assets/cards-post.jpg` 按两列两行排列信封、邮票、明信片和邮包。郊游篇的溪水题继续使用 `dist/assets/countryside.jpg` 中的溪流画面。
 
 ## 部署与许可证
 

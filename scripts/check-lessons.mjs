@@ -38,7 +38,7 @@ for (const lesson of lessons) {
     assert.equal(phrase.alternatives.length, 2, phrase.han);
     assert.equal(new Set([phrase.art, ...phrase.alternatives]).size, 3, `Duplicate choices: ${phrase.han}`);
     assert.ok(phrase.alternatives.every((picture) => picture === 'inside' || pictures.has(picture)), `Unresolvable choices: ${phrase.han}`);
-    if (volumes[lesson.volume].image === '/assets/garden.svg') {
+    if (volumes[lesson.volume].titleEn === 'Garden') {
       assert.ok(gardenCards.includes(`id="${phrase.art}"`), `Missing picture: ${phrase.art}`);
     }
     audio.add(wordTrack(phrase));

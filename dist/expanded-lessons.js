@@ -22,7 +22,7 @@ function stop(cat, name, nameEn, sticker, stickerEn, title, words, cards, intro,
 function book(id, title, titleEn, stops) {
   const positions = stops.length === 6 ? [10, 26, 43, 59, 76, 90] : [12, 31, 50, 69, 88];
   return {
-    title, titleEn, image: '/assets/reading-' + id + '.jpg',
+    title, titleEn, image: '/assets/oil-' + id + '.jpg',
     lessons: stops.map((lesson, index) => ({ ...lesson, at: [positions[index], index % 2 ? 74 : 61] })),
   };
 }

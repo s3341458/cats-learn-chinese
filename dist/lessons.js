@@ -394,10 +394,10 @@ const market = [
 ];
 
 export const volumes = [
-  { title: '小镇篇', titleEn: 'Town', image: '/assets/town.svg', lessons: town },
-  { title: '郊游篇', titleEn: 'Countryside', image: '/assets/countryside.jpg', lessons: countryside },
-  { title: '花园篇', titleEn: 'Garden', image: '/assets/garden.svg', lessons: garden },
-  { title: '市集篇', titleEn: 'Market', image: '/assets/market-post.jpg', lessons: market },
+  { title: '小镇篇', titleEn: 'Town', image: '/assets/oil-town.jpg', lessons: town },
+  { title: '郊游篇', titleEn: 'Countryside', image: '/assets/oil-countryside.jpg', lessons: countryside },
+  { title: '花园篇', titleEn: 'Garden', image: '/assets/oil-garden.jpg', lessons: garden },
+  { title: '市集篇', titleEn: 'Market', image: '/assets/oil-market.jpg', lessons: market },
   ...expandedVolumes,
 ];
 export const lessons = volumes.flatMap((volume, index) =>
