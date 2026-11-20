@@ -139,12 +139,23 @@ function showHome(opened) {
   if (opened) renderMap();
 }
 
+function hasSticker(index) {
+  if (index < state.completed.length) return true;
+  const resume = state.resume;
+  return resume?.index === index && Array.isArray(resume.placed) &&
+    resume.placed.includes('cat') && resume.placed.includes('car');
+}
+
+function stickerCount() {
+  return lessons.filter((_, index) => hasSticker(index)).length;
+}
+
 function renderMap() {
   const count = state.completed.length;
   const learnedCount = lessons.slice(0, count).reduce((total, lesson) => total + lesson.words.length, 0);
   const volume = volumes[activeVolume];
   const currentVolume = lessons[nextStop()].volume;
-  $('album-count').textContent = `${count} / ${lessons.length}`;
+  $('album-count').textContent = `${stickerCount()} / ${lessons.length}`;
   $('progress-count').textContent = `${count} / ${lessons.length}`;
   $('character-progress').textContent = localize(
     `${learnedCount} / ${characterCount} characters learned`,
@@ -201,13 +212,14 @@ function showPanel(title, content, returnId) {
 }
 
 function showAlbum() {
+  const count = stickerCount();
   showPanel(localize('Sticker book', '猫猫贴纸册'), `
     <p class="reward-copy">${localize(
-      `${state.completed.length} of ${lessons.length} cat stickers collected.`,
-      `已贴上 ${state.completed.length} / ${lessons.length} 张猫咪贴纸。`,
+      `${count} of ${lessons.length} cat stickers collected.`,
+      `已收集 ${count} / ${lessons.length} 张猫咪贴纸。`,
     )}</p>
     <ul class="sticker-grid">${lessons.map((lesson, i) => {
-      const owned = i < state.completed.length;
+      const owned = hasSticker(i);
       return `<li class="sticker${owned ? '' : ' is-empty'}">
         ${owned ? cat(lesson.cat) : icon('lock')}
         <b>${owned ? stickerName(lesson) : localize('To collect', '待收集')}</b><small>${lessonName(lesson)}</small>
@@ -645,6 +657,12 @@ function showStickers() {
   const lesson = currentLesson();
   const placed = new Set(run.placed);
   const stickerLabel = (kind) => kind === 'cat' ? stickerName(lesson) : localize('Cat car', '猫猫小车');
+  const reward = `<div class="sticker-reward">
+    <div class="sticker-reward-art" aria-hidden="true">${cat(lesson.cat)}</div>
+    <div><h3 id="sticker-reward-title" tabindex="-1">${localize(
+      `You earned the ${stickerName(lesson)} sticker!`, `获得「${stickerName(lesson)}」贴纸！`,
+    )}</h3><p>${localize('Saved in your sticker book.', '已经收进贴纸册啦！')}</p></div>
+  </div>`;
   return chapter(localize(`Place ${stickerName(lesson)} and the cat car`, `贴上${stickerName(lesson)}和它的小车`), `
     <div class="sticker-sheet">
       ${['cat', 'car'].map((item) => `<div class="sticker-space ${placed.has(item) ? 'stuck' : ''}" data-slot="${item}">
@@ -652,13 +670,13 @@ function showStickers() {
         <span>${stickerLabel(item)}</span>
       </div>`).join('')}
     </div>
-    <div class="sticker-tray">
+    ${placed.size === 2 ? `${reward}
+      <div class="panel-actions">${primary(localize('Let’s drive', '开车出发'), 'advance')}</div>` : `<div class="sticker-tray">
       ${['cat', 'car'].filter((item) => !placed.has(item)).map((item) => `<button class="pick-sticker" draggable="true" data-sticker="${item}" aria-label="${localize(`Place ${stickerLabel(item)}`, `贴上${stickerLabel(item)}`)}">
         ${item === 'cat' && run.index ? cat(lesson.cat) : sprite(item)}
       </button>`).join('')}
     </div>
-    <div class="panel-actions">${placed.size === 2 ? primary(localize('Let’s drive', '开车出发'), 'advance') :
-      `<p class="phase-copy">${localize('Tap each sticker or drag it to its outline.', '点贴纸，或者拖到上面的轮廓。')}</p>`}</div>`,
+    <p class="phase-copy">${localize('Tap each sticker or drag it to its outline.', '点贴纸，或者拖到上面的轮廓。')}</p>`}`,
     localize('Place both stickers to take the cat car out and look for road signs.', '让孩子把两张贴纸贴到轮廓上。贴好就可以开着猫猫小车去找路牌。'));
 }
 
@@ -861,9 +879,19 @@ function choose(index, button) {
 
 function placeSticker(kind) {
   if (run.stage !== 'stickers' || !['cat', 'car'].includes(kind) || run.placed.includes(kind)) return;
+  const alreadyCollected = hasSticker(run.index);
   run.placed.push(kind);
   checkpoint();
   renderScene(false);
+  if (!alreadyCollected && hasSticker(run.index)) {
+    scene.querySelector('.sticker-reward').classList.add('celebrating');
+    $('sticker-reward-title').focus();
+    if (state.sound) {
+      narration.src = '/audio/sticker-reward.wav';
+      narration.play().catch(() => { /* The reward is shown even when audio cannot play. */ });
+    }
+    return;
+  }
   scene.querySelector('.pick-sticker, [data-action="advance"]')?.focus({ preventScroll: true });
 }
 

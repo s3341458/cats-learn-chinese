@@ -5,6 +5,7 @@ import { activityPrompts, introTrack, lessons, storyTrack, volumes, wordTrack } 
 const files = new Map([
   ['/index.html', 'text/html; charset=utf-8'],
   ['/audio/credits.txt', 'text/plain; charset=utf-8'],
+  ['/audio/sticker-reward.wav', 'audio/wav'],
   ['/adventure.css', 'text/css; charset=utf-8'],
   ['/progress.js', 'text/javascript; charset=utf-8'],
   ['/tracing.js', 'text/javascript; charset=utf-8'],
