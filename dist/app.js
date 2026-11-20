@@ -1,5 +1,5 @@
 import { activityPrompts, introTrack, lessons, storyTrack, traceGuide, volumes, wordTrack } from './lessons.js';
-import { availability, dayAfter, dueCharacters, recordAnswer, save, state } from './progress.js';
+import { availability, dayAfter, recordAnswer, reviewCharacters, save, state } from './progress.js';
 import { setupTracing } from './tracing.js';
 
 const $ = (id) => document.getElementById(id);
@@ -41,6 +41,7 @@ let parentHeld = false;
 let speechId = 0;
 let speechTimer;
 let activeUtterance;
+let activeTrack;
 let cleanupTracing;
 let panelReturn;
 const characterCount = new Set(lessons.flatMap(({ words }) => words.map(({ han }) => han))).size;
@@ -57,9 +58,11 @@ function stopSpeech() {
   speechId++;
   clearTimeout(speechTimer);
   activeUtterance = null;
+  activeTrack = null;
   narration.onplaying = null;
   narration.onended = null;
   narration.onerror = null;
+  narration.onpause = null;
   narration.onwaiting = null;
   narration.pause();
   window.speechSynthesis?.cancel();
@@ -81,32 +84,26 @@ function speechStatus(message) {
   if (status) status.textContent = message;
 }
 
-function speak(text, hint = '', onFailure) {
+function speak(text) {
   stopSpeech();
   const currentId = speechId;
   const fallback = () => {
     if (currentId !== speechId) return;
-    speechStatus(hint || localize('Audio could not play. Tap the listen button to try again.', '语音暂时无法播放，请点朗读按钮重试。'));
+    stopSpeech();
+    speechStatus(localize('Audio could not play. Tap the listen button to try again.', '语音暂时无法播放，请点朗读按钮重试。'));
   };
-  if (!state.sound) return fallback();
-  const tryRecording = () => {
-    if (currentId !== speechId) return;
-    clearTimeout(speechTimer);
-    if (onFailure) onFailure();
-    else fallback();
-  };
-  if (!('speechSynthesis' in window)) return tryRecording();
-
   const speech = window.speechSynthesis;
+  if (!state.sound || !speech || !window.SpeechSynthesisUtterance) return fallback();
+  const voices = speech.getVoices();
+  const lang = (voice) => voice.lang.toLowerCase().replaceAll('_', '-');
+  const voice = voices.find((item) => ['zh-cn', 'zh-hans-cn'].includes(lang(item))) ||
+    voices.find((item) => /^cmn(?:-|$)/.test(lang(item))) ||
+    voices.find((item) => ['zh-hans', 'zh-sg', 'zh-hans-sg', 'zh-my', 'zh-hans-my', 'zh-tw', 'zh-hant-tw', 'zh'].includes(lang(item)));
+  if (!voice) return fallback();
   const utterance = new SpeechSynthesisUtterance(text);
   activeUtterance = utterance;
-  utterance.lang = 'zh-CN';
+  utterance.lang = voice.lang;
   utterance.rate = 0.78;
-  const voices = speech.getVoices();
-  const voice = voices.find((item) => /^zh[-_]CN$/i.test(item.lang)) ||
-    voices.find((item) => /^cmn(?:[-_]|$)/i.test(item.lang)) ||
-    voices.find((item) => /^zh(?![-_](?:HK|MO|yue)(?:[-_]|$))/i.test(item.lang));
-  if (!voice) return tryRecording();
   utterance.voice = voice;
   utterance.onstart = () => {
     if (currentId !== speechId) return;
@@ -118,16 +115,14 @@ function speak(text, hint = '', onFailure) {
     clearTimeout(speechTimer);
     activeUtterance = null;
   };
-  utterance.onerror = (event) => {
-    if (currentId === speechId && !['canceled', 'interrupted'].includes(event.error)) tryRecording();
-  };
+  utterance.onerror = fallback;
   speechStatus(localize('Loading Mandarin audio…', '正在加载普通话语音……'));
-  speechTimer = setTimeout(tryRecording, 1500);
+  speechTimer = setTimeout(fallback, 1500);
   try {
     if (speech.paused) speech.resume();
-    speech.speak(utterance);
+    speech.speak(activeUtterance);
   } catch {
-    tryRecording();
+    fallback();
   }
 }
 
@@ -146,10 +141,15 @@ function showHome(opened) {
 
 function renderMap() {
   const count = state.completed.length;
+  const learnedCount = lessons.slice(0, count).reduce((total, lesson) => total + lesson.words.length, 0);
   const volume = volumes[activeVolume];
   const currentVolume = lessons[nextStop()].volume;
   $('album-count').textContent = `${count} / ${lessons.length}`;
   $('progress-count').textContent = `${count} / ${lessons.length}`;
+  $('character-progress').textContent = localize(
+    `${learnedCount} / ${characterCount} characters learned`,
+    `已学 ${learnedCount} / ${characterCount} 字`,
+  );
   $('course-progress').setAttribute('aria-valuemax', lessons.length);
   $('course-progress').setAttribute('aria-valuenow', count);
   $('progress-fill').style.width = `${count / lessons.length * 100}%`;
@@ -169,6 +169,7 @@ function renderMap() {
   if ($('map-art').getAttribute('src') !== volume.image) $('map-art').src = volume.image;
   $('map-name').textContent = volumeName(volume);
   $('map-section').setAttribute('aria-label', localize(`${volumeName(volume)} map`, `${volumeName(volume)}地图`));
+  $('stops').dataset.count = volume.lessons.length;
   $('stops').innerHTML = lessons.map((lesson, i) => {
     if (lesson.volume !== activeVolume) return '';
     const status = availability(i);
@@ -228,7 +229,7 @@ function showGuide() {
         return `<li><b>${lessonName(lesson)} · ${hanzi(lesson.words.map(({ han }) => han).join('、'))}</b><span>${caption}</span>${action}</li>`;
       }).join('')}</ol>
       <h3>${localize('Reading progress', '认读记录')}</h3>
-      <p>${localize('Characters due for review can appear in later listening activities.', '该复习的汉字会穿插到之后的听音题。')}</p>
+      <p>${localize('Listening mixes in two characters from earlier stops, with priority for reviews that are due.', '后续听音题会穿插两个学过的字，优先复习到期的字。')}</p>
       ${review.length ? `<div class="review-wrap"><table><thead><tr>
         <th>${localize('Character or word', '字词')}</th><th>${localize('Familiarity', '熟悉度')}</th>
         <th>${localize('Next review', '下次复习')}</th><th>${localize('First try', '一次答对')}</th></tr></thead>
@@ -236,6 +237,7 @@ function showGuide() {
         <td>${item.due <= dayAfter() ? localize('Due', '到期') : item.due}</td><td>${item.right} / ${item.tries}</td></tr>`).join('')}</tbody></table></div>`
         : `<p>${localize('Your results appear here after a listening, word-building, or picture activity.', '做过听音、拼词或选图后，就会出现记录。')}</p>`}
       <p>${localize('Progress and stickers are saved in this browser. Lesson audio is always in Mandarin.', '进度和贴纸保存在此浏览器。课程语音始终使用普通话。')}</p>
+      <p><a href="/audio/credits.txt" target="_blank" rel="noopener">${localize('Mandarin recording credits', '普通话录音来源与署名')}</a></p>
     </div>`, 'guide');
 }
 
@@ -247,14 +249,27 @@ const artSymbols = {
 const artSheets = [
   ['cards-town', ['adult', 'child', 'doorway', 'yawn', 'sunny-field', 'rainy-field', 'night-field', 'sweaty-cat', 'wood-door', 'wood-table', 'notebook', 'picture-book']],
   ['cards-outdoors', ['fish', 'kitten', 'gate', 'diary', 'mountain', 'round-stone', 'stone-bridge', 'trail', 'paddy', 'earth', 'potato', 'mud-wall']],
+  ['cards-market', ['passenger-car', 'horse-carriage', 'bicycle', 'bus-stop', 'raw-rice', 'corn-cob', 'watermelon', 'cucumber', 'school-bag', 'bookshelf', 'pencil', 'brush']],
+  ['cards-post', ['mail-envelope', 'postage-stamp', 'postcard', 'mail-parcel'], 2],
+  ['home-detail', ['house-window', 'curtains', 'windowsill', 'bed-sheet', 'pillow', 'cloth-bag', 'wash-towel', 'scallions', 'red-tea', 'fish-soup', 'hair-comb', 'empty-bowl']],
+  ['story-detail', ['chalkboard', 'long-jump', 'jump-rope', 'stage', 'flute', 'willow', 'bamboo', 'bookshop', 'tablet', 'puppy', 'shepherd-dog', 'black-bear']],
 ];
-const pictures = new Map(artSheets.flatMap(([sheet, items]) => items.map((item, index) =>
-  [item, `<span class="atlas-picture" aria-hidden="true" style="--sheet:url('/assets/${sheet}.jpg');--column:${index % 4 * 100 / 3}%;--row:${Math.floor(index / 4) * 50}%"></span>`],
-)));
+const pictures = new Map(artSheets.flatMap(([sheet, items, columns = 4]) => {
+  const rows = items.length / columns;
+  return items.map((item, index) => {
+    const x = index % columns * 100 / (columns - 1);
+    const y = Math.floor(index / columns) * 100 / (rows - 1);
+    return [item, `<span class="atlas-picture" aria-hidden="true" style="--sheet:url('/assets/${sheet}.jpg');--column:${x}%;--row:${y}%;--sheet-size:${columns * 100}% ${rows * 100}%"></span>`];
+  });
+}));
 const insideOption = { art: 'inside', label: ['A ball inside a box', '小球在盒子里面'] };
 
 function art(value, lesson) {
   if (pictures.has(value)) return pictures.get(value);
+  if (['white-cloud', 'dark-cloud', 'white-rabbit', 'white-paper', 'strong-wind', 'rain-drops',
+    'umbrella', 'raincoat', 'kite', 'red-flower', 'green-grass', 'empty-pot', 'straw-hat'].includes(value)) {
+    return `<svg class="garden-picture" viewBox="0 0 160 160" aria-hidden="true"><use href="/assets/garden-cards.svg#${value}"/></svg>`;
+  }
   if (value === 'cat') return cat(lesson.cat);
   if (value === 'map-stream') return '<span class="map-art map-stream" aria-hidden="true"></span>';
   if (['field-grid', 'soil', 'water-glass'].includes(value)) {
@@ -318,7 +333,7 @@ function begin(index, resume = true) {
   const reviewWords = Array.isArray(saved?.reviewWords)
     ? saved.reviewWords.slice(0, 2).map((han) => lessons.slice(0, index).flatMap(({ words }) => words)
       .find((word) => word.han === han)).filter(Boolean)
-    : dueCharacters(lesson);
+    : reviewCharacters(index);
   const questions = [first, first, second, second, ...reviewWords, first, second];
   const stage = stages.includes(saved?.stage) ? saved.stage : 'film';
   run = {
@@ -422,7 +437,9 @@ function playFilm() {
   playSceneAudio(introTrack(lesson), lesson.intro, localize('Play intro', '播放开场'), { onStart: animate });
 }
 
-function playSceneAudio(track, text, replayLabel, { hint = '', onStart, fallbackToSpeech = true } = {}) {
+function playSceneAudio(track, text, replayLabel, { hint = '', onStart } = {}) {
+  // A tap on replay during the same cue should let the current take finish.
+  if (activeTrack === track) return;
   stopSpeech();
   const currentId = speechId;
   if (!state.sound) {
@@ -431,18 +448,17 @@ function playSceneAudio(track, text, replayLabel, { hint = '', onStart, fallback
     return;
   }
 
+  activeTrack = track;
+  let started = false;
+  const retry = localize(`Tap “${replayLabel}” to listen.`, `点「${replayLabel}」听一遍。`);
   const failed = (error) => {
     if (currentId !== speechId) return;
-    clearTimeout(speechTimer);
-    onStart?.();
-    if (error?.name === 'NotAllowedError') {
+    if (!started) onStart?.();
+    if (started || error?.name === 'NotAllowedError' || hint) {
       stopSpeech();
-      speechStatus(localize(`Tap “${replayLabel}” to listen.`, `点「${replayLabel}」听一遍。`));
-    } else if (fallbackToSpeech) {
-      speak(text, hint);
+      speechStatus(error?.name === 'NotAllowedError' ? retry : hint || retry);
     } else {
-      stopSpeech();
-      speechStatus(localize(`Audio could not play. Tap “${replayLabel}” to try again.`, `语音暂时无法播放，请点「${replayLabel}」重试。`) + (hint ? ` ${hint}` : ''));
+      speak(text);
     }
   };
   const loading = () => {
@@ -455,19 +471,34 @@ function playSceneAudio(track, text, replayLabel, { hint = '', onStart, fallback
     if (currentId !== speechId) return;
     clearTimeout(speechTimer);
     speechStatus('');
-    onStart?.();
+    if (!started) onStart?.();
+    started = true;
   };
   narration.onended = () => {
     if (currentId !== speechId) return;
     clearTimeout(speechTimer);
+    activeTrack = null;
     speechStatus('');
+  };
+  narration.onpause = () => {
+    if (narration.paused && !narration.ended) {
+      // The device may pause playback when audio is interrupted by another app.
+      stopSpeech();
+      speechStatus(retry);
+    }
   };
   narration.onerror = () => failed();
   narration.onwaiting = loading;
-  if (narration.getAttribute('src') !== track) narration.src = track;
+  if (narration.getAttribute('src') !== track || narration.error) narration.src = track;
   narration.currentTime = 0;
   loading();
   narration.play().catch(failed);
+}
+
+function roadCueDelay(track) {
+  // A quick correct answer can arrive before the pronunciation finishes.
+  const remaining = activeTrack === track ? narration.duration - narration.currentTime : 0;
+  return Math.max(650, Math.min(2500, (remaining || 0) * 1000 + 80));
 }
 
 function playTraceGuide() {
@@ -509,6 +540,7 @@ function showWord() {
       ${traceCard(word)}
       <p class="phase-copy" id="trace-count" role="status">${traceProgress(run.stroke, word.strokes.length)}</p>
       <p class="phase-copy" id="trace-instruction" ${done ? 'hidden' : ''}>${localize('Start at the bright dot. Follow the gray line slowly.', traceGuide.text)}</p>
+      <div class="panel-actions">${secondary(localize('Hear the character', '听这个字'), 'hear-word', 'sound')}</div>
       <div class="panel-actions" id="trace-actions">${done
         ? primary(localize('Continue', '继续'), 'advance') :
           `${secondary(localize('Hear tracing instructions', '听写字提示'), 'hear-trace', 'sound')}
@@ -541,11 +573,14 @@ function quizFeedback(label) {
 
 function showListening() {
   const question = run.questions[run.round];
+  const reviewing = run.reviewWords.includes(question);
   return chapter(localize('Listen and find the character', '听一听，找一找'), `
     ${rounds(run.round, run.questions.length)}
     ${secondary(localize('Hear the character', '听这个字'), 'hear-question', 'sound')}
     <div class="tile-row">${run.choices.map((han, i) => tile(han, i)).join('')}</div>
-    ${quizFeedback(localize('Tap the character you hear.', '听一听，然后点出你听到的字。'))}
+    ${quizFeedback(reviewing
+      ? localize('Review a character from an earlier stop.', '听一听，复习之前学过的字。')
+      : localize('Tap the character you hear.', '听一听，然后点出你听到的字。'))}
     <button class="text-button" data-action="show-hint">${localize('Show pinyin hint', '用拼音提示')}</button>`,
     localize(`If your child needs help, give them this hint. ${question.hint[0]}`, `需要帮忙时，想一想：${question.hint[1]}`));
 }
@@ -682,7 +717,7 @@ function showFinish() {
     <div class="finish-stamp">${icon('check')} ${stopName(run.index)}</div>
     <h2 id="scene-title" tabindex="-1">${title}</h2>
     <div class="finish-cats">${endOfVolume
-      ? (last ? lessons : route.lessons).map((item) => cat(item.cat)).join('')
+      ? route.lessons.map((item) => cat(item.cat)).join('')
       : `${run.index ? cat(lesson.cat) : sprite('cat')}${sprite('car')}`}</div>
     <p>${last ? localize(
       `You read ${lessons.length} stories, learned ${characterCount} characters, and collected every sticker.`,
@@ -698,8 +733,8 @@ const renderers = {
   drive: showDrive, finish: showFinish,
 };
 
-function renderScene(focus = true) {
-  stopSpeech();
+function renderScene(focus = true, { keepAudio = false } = {}) {
+  if (!keepAudio) stopSpeech();
   clearTimeout(timer);
   run.missed ??= new Set();
   run.slots ??= '';
@@ -733,44 +768,44 @@ function nextItem() {
     return advance();
   }
   run.round++;
+  const keepAudio = run.stage === 'listen' && activeTrack === wordTrack(run.questions[run.round]);
   resetRound();
   checkpoint();
-  renderScene();
+  renderScene(true, { keepAudio });
   playStageCue();
 }
 
 function playStageCue() {
   if (run.stage === 'film') playFilm();
   if (['first', 'second'].includes(run.stage)) {
-    if (run.wordMode === 'glyph') hearCharacter(currentWord(), localize('Listen again', '再听一遍'));
+    if (run.wordMode === 'glyph') hearVocabulary(currentWord(), localize('Listen again', '再听一遍'));
     else hearInstructions();
   }
   if (run.stage === 'listen') hearQuestion();
   if (['build', 'match'].includes(run.stage)) hearPhrase();
   if (run.stage === 'story') readStory();
-  if (run.stage === 'stickers' || (run.stage === 'drive' && run.round < 6)) hearInstructions();
+  if (run.stage === 'stickers') hearInstructions();
+  if (run.stage === 'drive' && run.round < 6) {
+    if (run.driving && !run.hit) hearRoad();
+    else hearInstructions();
+  }
 }
 
 function pinyinHint(word) {
   return localize(`Pinyin hint: ${word.py}`, `听音提示：${word.py}`);
 }
 
-function hearCharacter(word, replayLabel) {
-  const hint = pinyinHint(word);
-  speak(word.han, hint, () => {
-    playSceneAudio(wordTrack(word), word.han, replayLabel, { hint, fallbackToSpeech: false });
-  });
+function hearVocabulary(word, replayLabel) {
+  playSceneAudio(wordTrack(word), word.han, replayLabel, { hint: pinyinHint(word) });
 }
 
 function hearQuestion() {
   const word = run.questions[run.round];
-  hearCharacter(word, localize('Hear the character', '听这个字'));
+  hearVocabulary(word, localize('Hear the character', '听这个字'));
 }
 
 function hearPhrase() {
-  const phrase = currentPhrase();
-  const hint = localize(`Ask a grown-up to read “${phrase.han}”.`, `请大人读一遍「${phrase.han}」。`);
-  playSceneAudio(wordTrack(phrase), phrase.han, localize('Hear the word', '听这个词'), { hint });
+  hearVocabulary(currentPhrase(), localize('Hear the word', '听这个词'));
 }
 
 function choose(index, button) {
@@ -790,8 +825,7 @@ function choose(index, button) {
     run.slots += choice;
     if (run.slots === phrase.han) {
       recordAnswer(phrase.han, run.missed.size === 0);
-      renderScene();
-      hearPhrase();
+      renderScene(true, { keepAudio: true });
     } else {
       const slot = scene.querySelector('.slots').children[run.slots.length - 1];
       slot.textContent = choice;
@@ -815,7 +849,8 @@ function choose(index, button) {
     return;
   }
   run.hit = true;
-  recordAnswer(stage === 'listen' ? target : currentPhrase().han, run.missed.size === 0);
+  const reviewStop = stage === 'listen' && run.reviewWords.includes(run.questions[run.round]) ? run.index : undefined;
+  recordAnswer(stage === 'listen' ? target : currentPhrase().han, run.missed.size === 0, reviewStop);
   scene.querySelectorAll('[data-pick]').forEach((option) => { option.disabled = true; });
   button.classList.remove('miss');
   button.classList.add('hit');
@@ -833,13 +868,11 @@ function placeSticker(kind) {
 }
 
 function hearRoad() {
+  if (run.hit) return;
   const item = roadQuestions()[run.round];
   if (!item) return;
   const label = localize('Hear the sign again', '再听路牌');
-  if (item.strokes) hearCharacter(item, label);
-  else playSceneAudio(wordTrack(item), item.han, label, {
-    hint: localize(`Find this sign: ${item.han}`, `找这块路牌：${item.han}`),
-  });
+  hearVocabulary(item, label);
 }
 
 function readStory() {
@@ -856,7 +889,8 @@ function startDrive() {
 
 function chooseLane(lane) {
   if (!run.driving || run.hit) return;
-  const target = roadQuestions()[run.round].han;
+  const item = roadQuestions()[run.round];
+  const target = item.han;
   run.lane = lane;
   scene.querySelector('.road-car').style.setProperty('--lane', lane);
   const button = scene.querySelector(`[data-lane="${lane}"]`);
@@ -871,6 +905,7 @@ function chooseLane(lane) {
   run.hit = true;
   $('road').classList.remove('moving');
   scene.querySelectorAll('[data-lane]').forEach((option) => { option.disabled = true; });
+  scene.querySelector('[data-action="hear-road"]').disabled = true;
   button.classList.remove('miss');
   button.classList.add('hit');
   const firstTry = run.missed.size === 0;
@@ -883,7 +918,7 @@ function chooseLane(lane) {
     resetRound();
     if (run.round === 6) renderScene();
     else startDrive();
-  }, 650);
+  }, roadCueDelay(wordTrack(item)));
 }
 
 function complete() {
@@ -999,7 +1034,7 @@ scene.addEventListener('click', (event) => {
   const playsAudio = say || action?.startsWith('hear-') ||
     ['play-film', 'read-story', 'start-drive'].includes(action);
   if (playsAudio && !state.sound) setSound(true);
-  if (say) return hearCharacter(characterLessons.get(say), say);
+  if (say) return hearVocabulary(characterLessons.get(say), say);
   switch (action) {
     case 'home':
       journey.close();
@@ -1018,7 +1053,7 @@ scene.addEventListener('click', (event) => {
       run.wordMode = run.wordMode === 'picture' ? 'glyph' : 'trace';
       checkpoint();
       renderScene();
-      if (run.wordMode === 'glyph') hearCharacter(currentWord(), localize('Listen again', '再听一遍'));
+      if (run.wordMode === 'glyph') hearVocabulary(currentWord(), localize('Listen again', '再听一遍'));
       else if (run.stroke < currentWord().strokes.length) playTraceGuide();
       break;
     case 'hear-instructions':
@@ -1031,7 +1066,7 @@ scene.addEventListener('click', (event) => {
       cleanupTracing?.();
       break;
     case 'hear-word':
-      hearCharacter(currentWord(), localize('Listen again', '再听一遍'));
+      hearVocabulary(currentWord(), localize('Listen again', '再听一遍'));
       break;
     case 'hear-question':
       hearQuestion();

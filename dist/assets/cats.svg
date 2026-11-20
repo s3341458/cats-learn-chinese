@@ -19,6 +19,47 @@
   <g id="smoky"><use href="#face" fill="#adbac2"/></g>
   <g id="salt"><use href="#face" fill="#a9c9e7"/></g>
   <g id="peach"><use href="#face" fill="#f2a487"/></g>
+  <g id="cotton"><use href="#face" fill="#eee6db"/></g>
+  <g id="breeze"><use href="#face" fill="#bddbd0"/></g>
+  <g id="blossom"><use href="#face" fill="#e8b5c6"/></g>
+  <g id="chestnut"><use href="#face" fill="#cb967f"/></g>
+  <g id="millet"><use href="#face" fill="#efc787"/></g>
+  <g id="ink"><use href="#face" fill="#aab4d6"/></g>
+  <g id="pomelo"><use href="#face" fill="#e9b97a"/></g>
+  <g id="hands-feet"><use href="#face" fill="#edbe94"/></g>
+  <g id="eye-tooth"><use href="#face" fill="#e6aaa5"/></g>
+  <g id="door-window"><use href="#face" fill="#c8b5e3"/></g>
+  <g id="bed-light"><use href="#face" fill="#ead38c"/></g>
+  <g id="shoes-cloth"><use href="#face" fill="#e3c6a9"/></g>
+  <g id="face-hair"><use href="#face" fill="#d9aebb"/></g>
+  <g id="greens-onion"><use href="#face" fill="#abd095"/></g>
+  <g id="noodles-meat"><use href="#face" fill="#e8c87d"/></g>
+  <g id="soup-bowl"><use href="#face" fill="#baa1e1"/></g>
+  <g id="sweets"><use href="#face" fill="#daa48c"/></g>
+  <g id="tea-cup"><use href="#face" fill="#93bfaf"/></g>
+  <g id="peach-pear"><use href="#face" fill="#e3ad96"/></g>
+  <g id="cat-dog"><use href="#face" fill="#c4b5ab"/></g>
+  <g id="cow-sheep"><use href="#face" fill="#f1dfc0"/></g>
+  <g id="hens-eggs"><use href="#face" fill="#e3c691"/></g>
+  <g id="birds-flight"><use href="#face" fill="#abb7d4"/></g>
+  <g id="pig-deer"><use href="#face" fill="#ca9f7c"/></g>
+  <g id="bear-elephant"><use href="#face" fill="#b3a7bd"/></g>
+  <g id="picture-paper"><use href="#face" fill="#eca5ae"/></g>
+  <g id="text-lesson"><use href="#face" fill="#dfa875"/></g>
+  <g id="read-teach"><use href="#face" fill="#b1cbdc"/></g>
+  <g id="pat-ball"><use href="#face" fill="#b9ce94"/></g>
+  <g id="run-jump"><use href="#face" fill="#d4a7d9"/></g>
+  <g id="stage-dance"><use href="#face" fill="#c8c8eb"/></g>
+  <g id="river-sea"><use href="#face" fill="#9bc8d0"/></g>
+  <g id="boat-bridge"><use href="#face" fill="#a9b9db"/></g>
+  <g id="tree-pine"><use href="#face" fill="#a7c7a1"/></g>
+  <g id="snow-ice"><use href="#face" fill="#b9dcec"/></g>
+  <g id="star-night"><use href="#face" fill="#e9c4d3"/></g>
+  <g id="work-shop"><use href="#face" fill="#d9ae94"/></g>
+  <g id="rail-station"><use href="#face" fill="#bfc6d8"/></g>
+  <g id="doctor-medicine"><use href="#face" fill="#eed391"/></g>
+  <g id="electric-clock"><use href="#face" fill="#b8b0d8"/></g>
+  <g id="piano-drum"><use href="#face" fill="#b8c997"/></g>
 </defs>
 <use href="#tangerine"/>
 </svg>

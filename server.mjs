@@ -1,21 +1,31 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { activityPrompts, introTrack, lessons, storyTrack, wordTrack } from './dist/lessons.js';
+import { activityPrompts, introTrack, lessons, storyTrack, volumes, wordTrack } from './dist/lessons.js';
 
 const files = new Map([
   ['/index.html', 'text/html; charset=utf-8'],
+  ['/audio/credits.txt', 'text/plain; charset=utf-8'],
   ['/adventure.css', 'text/css; charset=utf-8'],
   ['/progress.js', 'text/javascript; charset=utf-8'],
   ['/tracing.js', 'text/javascript; charset=utf-8'],
   ['/style.css', 'text/css; charset=utf-8'],
   ['/app.js', 'text/javascript; charset=utf-8'],
   ['/lessons.js', 'text/javascript; charset=utf-8'],
+  ['/expanded-lessons.js', 'text/javascript; charset=utf-8'],
+  ['/stroke-paths.js', 'text/javascript; charset=utf-8'],
+  ['/assets/ARPHICPL.TXT', 'text/plain; charset=utf-8'],
   ['/assets/kitten-stickers.png', 'image/png'],
-  ['/assets/countryside.jpg', 'image/jpeg'],
-  ['/assets/town.svg', 'image/svg+xml'],
   ['/assets/cats.svg', 'image/svg+xml'],
+  ['/assets/garden-cards.svg', 'image/svg+xml'],
   ['/assets/cards-town.jpg', 'image/jpeg'],
   ['/assets/cards-outdoors.jpg', 'image/jpeg'],
+  ['/assets/countryside.jpg', 'image/jpeg'],
+  ['/assets/market.jpg', 'image/jpeg'],
+  ['/assets/cards-market.jpg', 'image/jpeg'],
+  ['/assets/cards-post.jpg', 'image/jpeg'],
+  ['/assets/home-detail.jpg', 'image/jpeg'],
+  ['/assets/story-detail.jpg', 'image/jpeg'],
+  ...volumes.map(({ image }) => [image, 'image/jpeg']),
   ...Object.values(activityPrompts).map(({ track }) => [track, 'audio/mpeg']),
   ...lessons.flatMap((lesson) => [
     introTrack(lesson), storyTrack(lesson), ...[...lesson.words, ...lesson.phrases].map(wordTrack),

@@ -308,7 +308,7 @@
   width: 91%;
   aspect-ratio: 1;
   border-radius: 6px;
-  background: var(--sheet) var(--column) var(--row) / 400% 300% no-repeat;
+  background: var(--sheet) var(--column) var(--row) / var(--sheet-size) no-repeat;
 }
 .fish-scene {
   display: grid;
@@ -321,6 +321,7 @@
 }
 .small-fish .atlas-picture { width: 43%; }
 .emoji-art { white-space: nowrap; }
+.garden-picture { display: block; width: 94%; max-height: 100%; aspect-ratio: 1; }
 .map-art {
   display: block;
   width: 78%;
@@ -600,12 +601,18 @@
 }
 @media (max-width: 350px) { #cover-back { display: none; } }
 @media (max-width: 620px) {
+  #stops[data-count="4"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 620px) {
   .stop-label { white-space: normal; flex-wrap: wrap; justify-content: center; }
 }
 @media (max-width: 480px) {
+  .topbar-inner { height: auto; min-height: 63px; flex-wrap: wrap; gap: 6px 8px; padding-block: 7px; }
   .album-button > span { display: none; }
-  .brand { letter-spacing: 0; }
-  .brand small { white-space: normal; }
+  .album-button { gap: 4px; padding-inline: 6px; }
+  .brand { gap: 6px; font-size: 14px; letter-spacing: 0; white-space: nowrap; }
+  .brand-cat { width: 33px; height: 33px; flex: none; }
+  .brand small { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; }

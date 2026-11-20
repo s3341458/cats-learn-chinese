@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1140 460">
+<defs>
+  <pattern id="paper" width="21" height="19" patternUnits="userSpaceOnUse"><path d="m3 4 1 .3m11 9 2-.4m-7 5 1 0" stroke="#8c986e" opacity=".18" stroke-linecap="round"/></pattern>
+  <g id="flower" stroke="#7a9160" stroke-width="2"><path d="M0 24V0m0 17-7-5m7 2 7-6" fill="none"/><path d="M0-3C-10-17-21-1-10 5c-8 12 9 16 12 5C17 18 24 0 12-4c1-14-13-13-12 1Z" fill="#dfa1aa" stroke="#b97e88"/><circle cy="3" cx="2" r="4" fill="#f4d58f" stroke="none"/></g>
+  <g id="bush" stroke="#8da274" stroke-width="2"><path d="M0 39C-6 19 12 7 24 14 25-5 56-3 59 15c23-6 33 18 19 30Z" fill="#b8ca99"/></g>
+  <g id="cloud" stroke="#a1b9bf" stroke-width="2"><path d="M0 31C-5 14 12 8 23 12 29-7 53-2 57 11 79 0 92 25 77 34H6Z" fill="#fffdf6"/></g>
+  <g id="grass" fill="none" stroke="#93a975" stroke-width="2.3" stroke-linecap="round"><path d="m0 10-5-8m10 8V0m4 10 5-6"/></g>
+</defs>
+<path fill="#e9f2ed" d="M0 0h1140v460H0Z"/>
+<path d="M0 180Q139 73 291 139t285 3q162-80 326-4 131-42 238 26v296H0Z" fill="#d8e5c7"/>
+<path d="M0 244q147-72 299-24 146 50 291-15 140-63 293-1 158-60 257-12v268H0Z" fill="#e5e9c9"/>
+<path d="M0 378q129-43 260-9 120 31 265-7 157-43 294 9 156-39 321-12v101H0Z" fill="#d6e0b5"/>
+<path fill="url(#paper)" d="M0 0h1140v460H0Z"/>
+<use href="#cloud" x="192" y="45"/><use href="#cloud" transform="translate(390 65) scale(.75)"/><use href="#cloud" x="811" y="40"/>
+<g stroke="#c99d65" stroke-width="2.5" stroke-linecap="round"><circle cx="1023" cy="83" r="25" fill="#f4d792"/><path d="M1023 44v-7m0 85v7m-38-46h-7m85 0h7m-74-27-5-5m59 59 5 5m-59-5-5 5m59-59 5-5" fill="none"/></g>
+<g fill="none" stroke-linecap="round"><path d="M-30 330Q113 226 216 281T581 271 935 294t235-39" stroke="#b8ab88" stroke-width="43" opacity=".28"/><path d="M-30 330Q113 226 216 281T581 271 935 294t235-39" stroke="#f7e8c9" stroke-width="34"/><path d="M-30 330Q113 226 216 281T581 271 935 294t235-39" stroke="#c1a786" stroke-width="2" stroke-dasharray="2 11"/></g>
+<!-- Cloud Hill, with a rabbit and a drawing board. -->
+<ellipse cx="220" cy="213" rx="106" ry="18" fill="#c4d4a6"/>
+<use href="#bush" transform="translate(104 164) scale(1.1)"/>
+<g stroke="#8f8479" stroke-width="2.5" stroke-linejoin="round"><path d="m237 198 11-80m11 80-8-80" fill="none"/><path d="M220 126h61v51h-61Z" fill="#fffaf0"/><use href="#cloud" transform="translate(229 138) scale(.5)"/></g>
+<g stroke="#9b8f8b" stroke-width="2.2" fill="#fffdf5"><ellipse cx="190" cy="194" rx="23" ry="20"/><ellipse cx="178" cy="162" rx="6" ry="18" transform="rotate(-17 178 162)"/><ellipse cx="191" cy="159" rx="6" ry="19"/><circle cx="180" cy="180" r="17"/><circle cx="175" cy="179" r="2" fill="#64535c" stroke="none"/><path d="m166 186 5 1" stroke="#ce9a9e"/><circle cx="216" cy="199" r="8"/></g>
+<!-- Rain Pavilion, with a kite on the lawn. -->
+<ellipse cx="580" cy="221" rx="114" ry="17" fill="#c5d5ac"/>
+<g stroke="#8e7768" stroke-width="3" stroke-linejoin="round"><path d="M512 160h139l-15-14-55-40-55 40Z" fill="#a5c9b9"/><path d="M525 162v58m113-58v58" fill="none" stroke-width="8"/><path d="M514 220h137v10H514Z" fill="#d9bf9d"/><path d="M539 193h85v8h-85Zm9 8v18m68-18v18" fill="#d1aa88"/><path d="m581 105 1-12" fill="none"/></g>
+<g transform="translate(703 156) rotate(16)" stroke="#a57c75" stroke-width="2.4" stroke-linejoin="round"><path d="m0-30 27 29L0 28-27-1Z" fill="#e9a7a0"/><path d="M0-30v58M-27-1h54M0 28q-9 21 2 31t-3 22" fill="none"/><path d="m-3 46-11-4 3 10Z" fill="#c4cf9f"/></g>
+<!-- A greenhouse and flowerbeds. -->
+<ellipse cx="934" cy="230" rx="111" ry="19" fill="#c4d2a3"/>
+<g stroke="#829a8d" stroke-width="3" stroke-linejoin="round"><path d="M871 152 933 103l62 49v73H871Z" fill="#d2e8db"/><path d="m864 156 69-55 69 55M872 156h122m-92-31v98m62-98v98m-93-39h123" fill="none"/><path d="M921 225v-49h25v49" fill="#fff2d8"/><path d="M870 224h126" stroke="#9b8768"/></g>
+<g fill="#d5aa86" stroke="#a18065" stroke-width="2"><path d="m841 242 9 19h61l9-19Zm104 6 9 19h62l8-19Z"/></g>
+<use href="#flower" transform="translate(862 218) scale(.8)"/><use href="#flower" transform="translate(885 214) scale(1.1)"/><use href="#flower" transform="translate(966 223) scale(.9)"/><use href="#flower" x="994" y="222"/>
+<use href="#bush" x="1022" y="170"/>
+<g opacity=".95"><use href="#flower" x="76" y="338"/><use href="#flower" x="108" y="352"/><use href="#bush" x="289" y="330"/><use href="#grass" x="401" y="384"/><use href="#flower" x="476" y="356"/><use href="#flower" x="503" y="369"/><use href="#grass" x="667" y="369"/><use href="#bush" x="744" y="330"/><use href="#flower" x="867" y="377"/><use href="#flower" x="1035" y="347"/><use href="#grass" x="1101" y="364"/></g>
+</svg>

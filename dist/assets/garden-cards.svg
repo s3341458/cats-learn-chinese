@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160">
+<defs>
+  <pattern id="weave" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(-18)">
+    <path d="M0 2h9M2 0v9" stroke="#b89159" stroke-width="1" opacity=".5"/>
+  </pattern>
+  <g id="cloud-shape" stroke-width="3" stroke-linejoin="round">
+    <path d="M34 108C11 108 12 77 33 73 29 48 65 38 79 58 96 42 120 55 119 76 145 75 147 108 123 108Z"/>
+  </g>
+  <g id="white-cloud">
+    <rect x="7" y="13" width="146" height="134" rx="22" fill="#dceef3"/>
+    <use href="#cloud-shape" fill="#fffefa" stroke="#93aebc"/>
+    <path d="M42 96h23" stroke="#ecede7" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  <g id="dark-cloud">
+    <rect x="7" y="13" width="146" height="134" rx="22" fill="#dce6ed"/>
+    <use href="#cloud-shape" fill="#60677f" stroke="#41495f"/>
+    <path d="M42 96h23" stroke="#8a92a8" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  <g id="white-rabbit" stroke="#8b7c85" stroke-width="2.5" stroke-linejoin="round">
+    <ellipse cx="82" cy="133" rx="49" ry="7" fill="#e1e7ce" stroke="none"/>
+    <circle cx="120" cy="109" r="13" fill="#fffdf6"/>
+    <ellipse cx="86" cy="105" rx="35" ry="29" fill="#fffdf6"/>
+    <ellipse cx="56" cy="44" rx="11" ry="30" transform="rotate(-15 56 44)" fill="#fffdf6"/>
+    <ellipse cx="80" cy="42" rx="10" ry="29" transform="rotate(9 80 42)" fill="#fffdf6"/>
+    <path d="M53 28l6 31M81 26l-3 31" stroke="#e9b1b8" stroke-width="6" stroke-linecap="round"/>
+    <ellipse cx="65" cy="82" rx="28" ry="24" fill="#fffdf6"/>
+    <circle cx="54" cy="79" r="2.5" fill="#523950" stroke="none"/>
+    <circle cx="77" cy="79" r="2.5" fill="#523950" stroke="none"/>
+    <path d="m62 88 4 3 4-3" fill="#df98a6" stroke="#c18495"/>
+    <path d="M55 129h20m20 0h13" stroke-linecap="round"/>
+  </g>
+  <g id="white-paper" stroke-linejoin="round">
+    <path d="M38 25h71l19 19v96H38Z" fill="#dbd7ca" stroke="none"/>
+    <path d="M32 19h72l19 19v96H32Z" fill="#fff" stroke="#9fadb4" stroke-width="3"/>
+    <path d="M104 19v19h19" fill="#e8eef0" stroke="#9fadb4" stroke-width="2"/>
+  </g>
+  <g id="strong-wind" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M43 136Q75 104 87 70l12 3q-11 40-39 63Z" fill="#bc9471" stroke="#816d59" stroke-width="3"/>
+    <path d="M62 83C41 71 65 45 82 52 86 29 122 26 126 49 151 47 157 80 135 89 128 110 100 109 92 94 80 101 61 97 62 83Z" fill="#adc790" stroke="#718961" stroke-width="3"/>
+    <path d="M13 42h34q18 0 11-13M7 67h35M14 108h25M18 122h15" fill="none" stroke="#83aab1" stroke-width="4"/>
+    <path d="M116 119q17-12 27-4-10 15-27 4Zm-9 18q13-8 23-2-11 12-23 2Z" fill="#a5bb7d" stroke="#718961" stroke-width="2"/>
+  </g>
+  <g id="rain-drops" stroke-linecap="round" stroke-linejoin="round">
+    <use href="#cloud-shape" transform="translate(8 -12) scale(.9)" fill="#bdcbd8" stroke="#7e96aa"/>
+    <path d="m42 106-7 14m38-11-7 14m38-17-7 14m34-13-7 14m-68 7-7 14m38-12-7 14m37-14-7 14" stroke="#6e9fc0" stroke-width="5"/>
+  </g>
+  <g id="umbrella" stroke="#986f4b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M80 24v98q0 17-13 17-13 0-13-12" fill="none"/>
+    <path d="M18 83Q26 29 80 29q54 0 62 54-16-13-31 0-15-13-31 0-16-13-31 0-15-13-31 0Z" fill="#f4cc74"/>
+    <path d="M80 29Q53 45 49 83m31-54q27 16 31 54" fill="none" stroke="#c89a52" stroke-width="2"/>
+  </g>
+  <g id="raincoat" stroke="#527e9b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M53 49q0-32 27-32t27 32L94 64H66Z" fill="#8eb8d0"/>
+    <path d="M66 48q0-19 14-19t14 19" fill="#dce9ed"/>
+    <path d="m56 52-17 8-19 42 24 10 10-22-4 50h60l-4-50 10 22 24-10-19-42-17-8-24 14Z" fill="#8eb8d0"/>
+    <path d="M80 68v70M56 112h14m20 0h14" fill="none"/>
+    <circle cx="85" cy="83" r="2" fill="#fff6dd" stroke="none"/><circle cx="85" cy="101" r="2" fill="#fff6dd" stroke="none"/><circle cx="85" cy="123" r="2" fill="#fff6dd" stroke="none"/>
+  </g>
+  <g id="kite" stroke="#9b6e69" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M82 13 123 56 82 99 41 56Z" fill="#efb8a5"/>
+    <path d="M82 13v86m-41-43h82" stroke="#fff4d6"/>
+    <path d="M82 99q-13 20 4 29t-6 22M74 79Q29 106 24 146" fill="none"/>
+    <path d="m77 109-13-2 5 12Zm12 24 14-4-2 13Z" fill="#b3cbb0"/>
+  </g>
+  <g id="red-flower" stroke="#708757" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M80 76v64m0-30q-28 1-36-24 28 0 36 24Zm0 14q29-2 36-25-29 0-36 25Z" fill="#a6be7c"/>
+    <path d="M80 35C64 7 42 28 53 49 23 50 27 80 55 78 47 104 79 111 86 85c23 19 44-6 24-24 26-16 7-42-14-28-2-17-14-18-16 2Z" fill="#d96c72" stroke="#a9505c"/>
+    <circle cx="78" cy="62" r="12" fill="#f3cf7e" stroke="#bd9b5d"/>
+  </g>
+  <g id="green-grass" stroke="#708b54" stroke-width="2.5" stroke-linejoin="round">
+    <ellipse cx="80" cy="131" rx="60" ry="10" fill="#e2e8cc" stroke="none"/>
+    <path d="M29 133Q35 91 15 67q42 14 42 58Q53 68 39 41q34 20 39 79Q77 63 91 21q10 45 3 100 11-44 43-66-16 39-19 76 7-20 25-32l-11 34Z" fill="#a3bf78"/>
+  </g>
+  <g id="empty-pot" stroke="#a56b55" stroke-width="3" stroke-linejoin="round">
+    <path d="m38 61 13 73h60l13-73Z" fill="#d99e78"/>
+    <path d="M29 46h103v24H29Z" fill="#e6b18b"/>
+    <ellipse cx="80" cy="46" rx="51" ry="10" fill="#a3745e"/>
+    <ellipse cx="80" cy="46" rx="39" ry="5" fill="#7b594c" stroke="none"/>
+    <path d="M57 80l6 42" fill="none" stroke="#edc29f"/>
+  </g>
+  <g id="straw-hat" stroke="#aa8456" stroke-width="3" stroke-linejoin="round">
+    <ellipse cx="80" cy="105" rx="66" ry="25" fill="#efd29a"/>
+    <path d="M42 100V78q0-35 38-35t38 35v22q-37 22-76 0Z" fill="#efd29a"/>
+    <ellipse cx="80" cy="105" rx="66" ry="25" fill="url(#weave)" stroke="none"/>
+    <path d="M42 100V78q0-35 38-35t38 35v22q-37 22-76 0Z" fill="url(#weave)"/>
+    <path d="M42 86q38 17 76 0v13q-38 20-76 0Z" fill="#ce8d97" stroke="#b77882"/>
+  </g>
+</defs>
+<use href="#red-flower"/>
+</svg>
