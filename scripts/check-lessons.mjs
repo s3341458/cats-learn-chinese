@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { activityPrompts, introTrack, lessons, storyTrack, volumes, wordTrack } from '../dist/lessons.js';
+import { activityPrompts, introTrack, lessons, storyReadings, storyTrack, volumes, wordTrack } from '../dist/lessons.js';
 
 const asset = (path) => fileURLToPath(new URL(`../dist${path}`, import.meta.url));
 const cats = readFileSync(asset('/assets/cats.svg'), 'utf8');
@@ -38,6 +38,9 @@ for (const lesson of lessons) {
     assert.equal(phrase.alternatives.length, 2, phrase.han);
     assert.equal(new Set([phrase.art, ...phrase.alternatives]).size, 3, `Duplicate choices: ${phrase.han}`);
     assert.ok(phrase.alternatives.every((picture) => picture === 'inside' || pictures.has(picture)), `Unresolvable choices: ${phrase.han}`);
+    if (volumes[lesson.volume].extension) {
+      assert.ok(lesson.intro.includes(phrase.han) || lesson.story.includes(phrase.han), `Word missing from its story: ${phrase.han}`);
+    }
     if (volumes[lesson.volume].titleEn === 'Garden') {
       assert.ok(gardenCards.includes(`id="${phrase.art}"`), `Missing picture: ${phrase.art}`);
     }
@@ -45,8 +48,25 @@ for (const lesson of lessons) {
   }
 }
 for (const path of audio) assert.ok(statSync(asset(path)).size > 1000, `Missing or empty recording: ${path}`);
-assert.equal(seenCharacters.size, 100, 'The course has 100 distinct target characters');
-for (const han of seenCharacters) assert.ok(nativeRecordings[han], `Missing native reading: ${han}`);
+for (const [index, lesson] of lessons.entries()) {
+  const tokens = storyReadings(index);
+  assert.equal(tokens.map(token => token.han ?? token).join(''), lesson.story);
+  for (const word of tokens.filter(token => token.han)) assert.ok(audio.has(wordTrack(word)), word.han);
+}
+for (const [lessonKey, expected] of [
+  ['count-calculate', [['数', 'shǔ'], ['数字', 'shù zì']]],
+  ['sweep-wipe', [['扫', 'sǎo'], ['扫帚', 'sào zhou']]],
+  ['grapes', [['葡萄', 'pú tao'], ['葡萄干', 'pú tao gān']]],
+]) {
+  const tokens = storyReadings(lessons.findIndex(lesson => lesson.cat === lessonKey));
+  for (const [han, py] of expected) assert.ok(tokens.some(token => token.han === han && token.py === py), han);
+}
+assert.equal(volumes.length, 20, 'The course has 20 books');
+assert.equal(lessons.length, 100, 'The course has 100 stops');
+assert.equal(seenCharacters.size, 200, 'The course has 200 distinct target characters');
+for (const { words } of lessons.slice(0, 50)) {
+  for (const { han } of words) assert.ok(nativeRecordings[han], `Missing native reading: ${han}`);
+}
 const vocabulary = new Map();
 for (const { words, phrases } of lessons) {
   for (const word of [...words, ...phrases]) {

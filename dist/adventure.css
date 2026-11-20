@@ -79,6 +79,8 @@
 }
 .route-tabs button span { font-size: 11px; font-weight: 600; color: #775f51; }
 .route-tabs button[aria-pressed="true"] { background: #f9e9ce; color: #8b463b; border-color: #c18f6d; }
+.course-sections { padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.course-sections:empty { display: none; }
 
 #journey {
   inset: 0;
@@ -487,6 +489,45 @@
 .pick-sticker { border: 0; background: transparent; padding: 0; cursor: grab; text-align: center; }
 .pick-sticker:hover { transform: rotate(-4deg); }
 .pick-sticker[data-sticker="car"] { grid-column: 2; }
+.sticker-reward {
+  width: min(460px, 100%);
+  padding: 10px clamp(10px, 4vw, 24px);
+  display: flex;
+  gap: clamp(10px, 4vw, 20px);
+  align-items: center;
+  justify-content: center;
+  background: #fff0bd;
+  border: 2px solid #d8a64e;
+  border-radius: 18px;
+  box-shadow: 0 4px 0 #edd9a5;
+  color: #75432d;
+  text-align: left;
+}
+.sticker-reward h3 { margin: 0; font-size: clamp(17px, 4.6vw, 24px); }
+.sticker-reward p { margin: 4px 0 0; font-size: 13px; }
+.sticker-reward-art { position: relative; flex: none; }
+.sticker-reward-art .cat-art { width: clamp(68px, 20vw, 96px); }
+.sticker-reward-art::before, .sticker-reward-art::after {
+  position: absolute;
+  content: '✦';
+  color: #9a5c16;
+}
+.sticker-reward-art::before { top: 1%; left: 0; font-size: 21px; }
+.sticker-reward-art::after { right: 1%; bottom: 10%; font-size: 17px; }
+.sticker-reward.celebrating { animation: sticker-pop .55s ease-out; }
+.sticker-reward.celebrating .sticker-reward-art { animation: sticker-pop .7s .1s ease-out both; }
+.sticker-reward.celebrating .sticker-reward-art::before,
+.sticker-reward.celebrating .sticker-reward-art::after { animation: sticker-sparkle .8s .25s ease-out both; }
+@keyframes sticker-pop {
+  0% { transform: scale(.8); }
+  58% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+@keyframes sticker-sparkle {
+  0% { transform: scale(.45) rotate(-25deg); }
+  55% { transform: scale(1.45) rotate(15deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
 .road {
   width: min(540px, 100%);
   height: clamp(180px, 39vh, 340px);

@@ -5,6 +5,7 @@ import { activityPrompts, introTrack, lessons, storyTrack, volumes, wordTrack } 
 const files = new Map([
   ['/index.html', 'text/html; charset=utf-8'],
   ['/audio/credits.txt', 'text/plain; charset=utf-8'],
+  ['/audio/sticker-reward.wav', 'audio/wav'],
   ['/adventure.css', 'text/css; charset=utf-8'],
   ['/progress.js', 'text/javascript; charset=utf-8'],
   ['/tracing.js', 'text/javascript; charset=utf-8'],
@@ -12,6 +13,7 @@ const files = new Map([
   ['/app.js', 'text/javascript; charset=utf-8'],
   ['/lessons.js', 'text/javascript; charset=utf-8'],
   ['/expanded-lessons.js', 'text/javascript; charset=utf-8'],
+  ['/more-lessons.js', 'text/javascript; charset=utf-8'],
   ['/stroke-paths.js', 'text/javascript; charset=utf-8'],
   ['/assets/ARPHICPL.TXT', 'text/plain; charset=utf-8'],
   ['/assets/kitten-stickers.png', 'image/png'],

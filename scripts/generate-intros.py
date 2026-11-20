@@ -18,6 +18,23 @@ ROOT = Path(__file__).resolve().parents[1]
 RATE = 24_000
 MODEL = "hexgrad/Kokoro-82M-v1.1-zh"
 VOICE = "zf_001"
+# Pin readings for isolated syllables and the tones of easy-to-misread words.
+# https://docs.aws.amazon.com/polly/latest/dg/ph-table-mandarin.html
+POLLY_PINYIN = {
+    "葡": "pu2", "柠": "ning2", "竹": "zhu2", "森": "sen1", "轮": "lun2", "欢": "huan1", "贺": "he4",
+    "龟壳": "gui1-ke2", "扫帚": "sao4-zhou0", "数一数": "shu3-yi0-shu3",
+    "葡萄架": "pu2-tao0-jia4", "葡萄汁": "pu2-tao0-zhi1", "葡萄干": "pu2-tao0-gan1",
+    "竹林": "zhu2-lin2", "松林": "song1-lin2", "校门": "xiao4-men2", "校服": "xiao4-fu2",
+    "泳帽": "yong3-mao4", "泳圈": "yong3-quan1", "圆圈": "yuan2-quan1", "笑脸": "xiao4-lian3",
+    "数字": "shu4-zi4", "数苹果": "shu3-ping2-guo3", "扫地": "sao3-di4",
+    "教室": "jiao4-shi4", "礁石": "jiao1-shi2", "船长": "chuan2-zhang3",
+    "葡萄": "pu2-tao0",
+}
+# Keep isolated character readings out of continuous speech. For instance, 萄
+# in 葡萄 is neutral even though the character is táo in isolation.
+PASSAGE_WORDS = re.compile("|".join(
+    re.escape(word) for word in sorted(POLLY_PINYIN, key=len, reverse=True) if len(word) > 1
+))
 
 
 def import_native(directory, word, source):
@@ -87,10 +104,20 @@ def render(pipeline, text, track, speed, pause):
     save_audio(np.concatenate(pieces), rate, track)
 
 
+def polly_pronunciation(text):
+    def phoneme(word):
+        return f'<phoneme alphabet="x-amazon-pinyin" ph="{POLLY_PINYIN[word]}">{escape(word)}</phoneme>'
+
+    if text in POLLY_PINYIN:
+        return phoneme(text)
+    return PASSAGE_WORDS.sub(lambda match: phoneme(match.group()), escape(text))
+
+
 def render_polly(text, track, speed, pause):
     """Synthesize the whole passage in one request so the voice keeps its phrasing."""
     rate = 16_000
-    ssml = f'<speak><prosody rate="{round(speed * 100)}%">{escape(text)}</prosody></speak>'
+    spoken = polly_pronunciation(text)
+    ssml = f'<speak><prosody rate="{round(speed * 100)}%">{spoken}</prosody></speak>'
     with tempfile.TemporaryDirectory(prefix="cats-polly-") as directory:
         recording = Path(directory) / "speech.pcm"
         subprocess.run([

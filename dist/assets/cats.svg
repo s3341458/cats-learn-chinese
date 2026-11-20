@@ -60,6 +60,56 @@
   <g id="doctor-medicine"><use href="#face" fill="#eed391"/></g>
   <g id="electric-clock"><use href="#face" fill="#b8b0d8"/></g>
   <g id="piano-drum"><use href="#face" fill="#b8c997"/></g>
+  <g id="red-yellow"><use href="#face" fill="#f39885"/></g>
+  <g id="blue-green"><use href="#face" fill="#8ebcdb"/></g>
+  <g id="black-purple"><use href="#face" fill="#c0a5d5"/></g>
+  <g id="orange-pink"><use href="#face" fill="#f4b47b"/></g>
+  <g id="gray-ink"><use href="#face" fill="#b3a3b5"/></g>
+  <g id="fruit-apple"><use href="#face" fill="#e6a9a3"/></g>
+  <g id="scent-banana"><use href="#face" fill="#efd482"/></g>
+  <g id="grapes"><use href="#face" fill="#bc9dce"/></g>
+  <g id="pomelo-mandarin"><use href="#face" fill="#f3aa78"/></g>
+  <g id="lemon"><use href="#face" fill="#efda8d"/></g>
+  <g id="sand-shellfish"><use href="#face" fill="#dcc49e"/></g>
+  <g id="shell-crab"><use href="#face" fill="#ea967a"/></g>
+  <g id="shrimp-waves"><use href="#face" fill="#9fc8d8"/></g>
+  <g id="coast-island"><use href="#face" fill="#a3ccc2"/></g>
+  <g id="sail-reef"><use href="#face" fill="#b2c2de"/></g>
+  <g id="bamboo-leaf"><use href="#face" fill="#b0cba7"/></g>
+  <g id="branch-root"><use href="#face" fill="#cbb28f"/></g>
+  <g id="grove-woods"><use href="#face" fill="#b5c497"/></g>
+  <g id="rabbit-butterfly"><use href="#face" fill="#d6b9d6"/></g>
+  <g id="fox"><use href="#face" fill="#d89563"/></g>
+  <g id="milk-wheat"><use href="#face" fill="#e4d2ad"/></g>
+  <g id="oil-salt"><use href="#face" fill="#d3cdb0"/></g>
+  <g id="date-honey"><use href="#face" fill="#c08786"/></g>
+  <g id="bee-porridge"><use href="#face" fill="#f0cb81"/></g>
+  <g id="morning-meal"><use href="#face" fill="#f0a47b"/></g>
+  <g id="wash-brush"><use href="#face" fill="#a7d0d2"/></g>
+  <g id="sweep-wipe"><use href="#face" fill="#c3c5d4"/></g>
+  <g id="table-chair"><use href="#face" fill="#d2ac8d"/></g>
+  <g id="cabinet-basin"><use href="#face" fill="#b8c4a1"/></g>
+  <g id="umbrella-box"><use href="#face" fill="#afadd5"/></g>
+  <g id="basketball-football"><use href="#face" fill="#e69f6c"/></g>
+  <g id="volleyball-badminton"><use href="#face" fill="#dfd3a4"/></g>
+  <g id="swim"><use href="#face" fill="#95bcd1"/></g>
+  <g id="slide-wheel"><use href="#face" fill="#aeb9d7"/></g>
+  <g id="race-win"><use href="#face" fill="#e4af83"/></g>
+  <g id="school"><use href="#face" fill="#b8d0ad"/></g>
+  <g id="teacher"><use href="#face" fill="#cab7dc"/></g>
+  <g id="classmates"><use href="#face" fill="#e3b0bf"/></g>
+  <g id="write-character"><use href="#face" fill="#a5b0cf"/></g>
+  <g id="count-calculate"><use href="#face" fill="#cbb18f"/></g>
+  <g id="sun-cloud"><use href="#face" fill="#eec780"/></g>
+  <g id="fog-sunset"><use href="#face" fill="#c2c5d8"/></g>
+  <g id="thunder-lightning"><use href="#face" fill="#dcaaad"/></g>
+  <g id="winter-spring"><use href="#face" fill="#a2c9ac"/></g>
+  <g id="summer-autumn"><use href="#face" fill="#dfa583"/></g>
+  <g id="festival-gift"><use href="#face" fill="#e9b0b8"/></g>
+  <g id="joy-smile"><use href="#face" fill="#edbf92"/></g>
+  <g id="greetings"><use href="#face" fill="#cea9d1"/></g>
+  <g id="sing-song"><use href="#face" fill="#afc5d0"/></g>
+  <g id="circle-reunion"><use href="#face" fill="#e5c79e"/></g>
 </defs>
 <use href="#tangerine"/>
 </svg>

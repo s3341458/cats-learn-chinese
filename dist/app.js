@@ -1,4 +1,4 @@
-import { activityPrompts, introTrack, lessons, storyTrack, traceGuide, volumes, wordTrack } from './lessons.js';
+import { activityPrompts, introTrack, lessons, storyReadings, storyTrack, traceGuide, volumes, wordTrack } from './lessons.js';
 import { availability, dayAfter, recordAnswer, reviewCharacters, save, state } from './progress.js';
 import { setupTracing } from './tracing.js';
 
@@ -27,7 +27,6 @@ const stickerName = (lesson) => localize(lesson.stickerEn, lesson.sticker);
 const volumeName = (volume) => localize(volume.titleEn, volume.title);
 const stopName = (index) => localize(`Stop ${index + 1}`, `第 ${index + 1} 站`);
 const hanzi = (text) => `<span lang="zh-Hans">${text}</span>`;
-const characterLessons = new Map(lessons.flatMap(({ words }) => words.map((word) => [word.han, word])));
 const chromeText = [...document.querySelectorAll('[data-zh]')].map((element) =>
   [element, element.textContent, element.dataset.zh]);
 const chromeLabels = [...document.querySelectorAll('[data-zh-label]')].map((element) =>
@@ -45,6 +44,7 @@ let activeTrack;
 let cleanupTracing;
 let panelReturn;
 const characterCount = new Set(lessons.flatMap(({ words }) => words.map(({ han }) => han))).size;
+const courseSections = [false, true];
 const nextStop = () => Math.min(state.completed.length, lessons.length - 1);
 let activeVolume = lessons[nextStop()].volume;
 
@@ -139,12 +139,23 @@ function showHome(opened) {
   if (opened) renderMap();
 }
 
+function hasSticker(index) {
+  if (index < state.completed.length) return true;
+  const resume = state.resume;
+  return resume?.index === index && Array.isArray(resume.placed) &&
+    resume.placed.includes('cat') && resume.placed.includes('car');
+}
+
+function stickerCount() {
+  return lessons.filter((_, index) => hasSticker(index)).length;
+}
+
 function renderMap() {
   const count = state.completed.length;
   const learnedCount = lessons.slice(0, count).reduce((total, lesson) => total + lesson.words.length, 0);
   const volume = volumes[activeVolume];
   const currentVolume = lessons[nextStop()].volume;
-  $('album-count').textContent = `${count} / ${lessons.length}`;
+  $('album-count').textContent = `${stickerCount()} / ${lessons.length}`;
   $('progress-count').textContent = `${count} / ${lessons.length}`;
   $('character-progress').textContent = localize(
     `${learnedCount} / ${characterCount} characters learned`,
@@ -161,7 +172,14 @@ function renderMap() {
   else if (activeVolume < currentVolume) tip = localize(`This book is finished. Open ${nextVolume} to keep going.`, `这册已读完。翻到「${nextVolume}」继续。`);
   else if (activeVolume > currentVolume) tip = localize(`Finish ${nextVolume} to open this book.`, `先完成「${nextVolume}」，再来这一册。`);
   $('map-tip').textContent = tip;
+  const sections = $('course-sections');
+  if (sections) {
+    sections.innerHTML = volumes.some(route => route.extension) ? courseSections.map((extension, index) =>
+      `<button data-course-section="${index}" aria-pressed="${Boolean(volume.extension) === extension}" aria-controls="routes">${extension
+        ? localize('Next 100 characters', '后 100 字') : localize('First 100 characters', '前 100 字')}</button>`).join('') : '';
+  }
   $('routes').innerHTML = volumes.map((route, index) => {
+    if (sections && Boolean(route.extension) !== Boolean(volume.extension)) return '';
     const done = lessons.slice(0, count).filter((lesson) => lesson.volume === index).length;
     return `<button id="route-${index}" data-route="${index}" aria-pressed="${activeVolume === index}" aria-controls="map-section">
       ${volumeName(route)}<span>${done} / ${route.lessons.length}</span></button>`;
@@ -201,13 +219,14 @@ function showPanel(title, content, returnId) {
 }
 
 function showAlbum() {
+  const count = stickerCount();
   showPanel(localize('Sticker book', '猫猫贴纸册'), `
     <p class="reward-copy">${localize(
-      `${state.completed.length} of ${lessons.length} cat stickers collected.`,
-      `已贴上 ${state.completed.length} / ${lessons.length} 张猫咪贴纸。`,
+      `${count} of ${lessons.length} cat stickers collected.`,
+      `已收集 ${count} / ${lessons.length} 张猫咪贴纸。`,
     )}</p>
     <ul class="sticker-grid">${lessons.map((lesson, i) => {
-      const owned = i < state.completed.length;
+      const owned = hasSticker(i);
       return `<li class="sticker${owned ? '' : ' is-empty'}">
         ${owned ? cat(lesson.cat) : icon('lock')}
         <b>${owned ? stickerName(lesson) : localize('To collect', '待收集')}</b><small>${lessonName(lesson)}</small>
@@ -301,7 +320,9 @@ function shuffle(values) {
 
 const currentLesson = () => lessons[run.index];
 const currentWord = () => currentLesson().words[run.stage === 'first' ? 0 : 1];
-const currentPhrase = () => currentLesson().phrases[run.round];
+const pictureOrder = [0, 1, 2, 3, 2, 0, 3, 1];
+const currentPhrase = () => currentLesson().phrases[run.stage === 'match' ? pictureOrder[run.round] : run.round];
+const isPictureReview = () => run.stage === 'match' && run.round >= currentLesson().phrases.length;
 const chapterLandscape = (lesson) =>
   `style="--book-map:url('${volumes[lesson.volume].image}');--book-position:${lesson.at[0]}% center"`;
 
@@ -334,14 +355,14 @@ function begin(index, resume = true) {
     ? saved.reviewWords.slice(0, 2).map((han) => lessons.slice(0, index).flatMap(({ words }) => words)
       .find((word) => word.han === han)).filter(Boolean)
     : reviewCharacters(index);
-  const questions = [first, first, second, second, ...reviewWords, first, second];
+  const questions = [first, first, second, second, ...reviewWords, first, second, first, second];
   const stage = stages.includes(saved?.stage) ? saved.stage : 'film';
   run = {
     index, stage, questions, reviewWords, visited: stages.indexOf(stage), round: 0,
     lane: 1, starred: [], stationary: matchMedia('(prefers-reduced-motion: reduce)').matches,
   };
   if (saved) {
-    const limit = { listen: questions.length - 1, build: 2, match: 3, drive: 6 }[stage] ?? 0;
+    const limit = { listen: questions.length - 1, build: lesson.phrases.length - 1, match: pictureOrder.length - 1, drive: 6 }[stage] ?? 0;
     run.round = Number.isInteger(saved.round) ? Math.max(0, Math.min(limit, saved.round)) : 0;
     run.wordMode = ['glyph', 'trace'].includes(saved.wordMode) ? saved.wordMode : 'picture';
     run.stroke = Number.isInteger(saved.stroke) ? Math.max(0, saved.stroke) : 0;
@@ -591,7 +612,7 @@ function showBuild() {
   const hearWord = secondary(localize('Hear the word', '听这个词'), 'hear-phrase', 'sound');
   return chapter(ready ? localize('Read the word aloud', '拼好啦，读一读') :
     localize('Listen and tap the characters in order', '听词语，按顺序点字'), `
-    ${rounds(run.round, 3)}
+    ${rounds(run.round, currentLesson().phrases.length)}
     <div class="build-board">
       <div class="art-card" role="img" aria-label="${localize(...item.label)}">${art(item.art, currentLesson())}</div>
       <div class="slots" aria-label="${localize('Word slots', '拼词格')}">${[...item.han].map((_, i) => `<span class="slot ${run.slots?.[i] ? 'filled' : ''}" lang="zh-Hans">${run.slots?.[i] ?? ''}</span>`).join('')}</div>
@@ -607,14 +628,17 @@ function showBuild() {
 function showMatch() {
   const item = currentPhrase();
   const lesson = currentLesson();
+  const review = isPictureReview();
   const positionHint = ['above', 'below'].includes(item.art)
     ? localize('Look at where the ball is in relation to the box.', '看小球在盒子的哪边。')
     : localize('Which picture matches this word?', '哪张图表示这个词？');
-  return chapter(localize('Read the word and pick a picture', '读一读，选图片'), `
-    ${rounds(run.round, lesson.phrases.length)}
+  const title = review ? localize('Read the word again', '再认一次这个词') : localize('Read the word and pick a picture', '读一读，选图片');
+  return chapter(title, `
+    ${rounds(run.round, pictureOrder.length)}
     <div class="read-card" lang="zh-Hans">${item.han}</div>
-    <span class="pinyin" lang="zh-Latn">${item.py}</span>
-    <div class="panel-actions">${secondary(localize('Hear the word', '听这个词'), 'hear-phrase', 'sound')}</div>
+    ${review ? '' : `<span class="pinyin" lang="zh-Latn">${item.py}</span>`}
+    <div class="panel-actions">${secondary(localize('Hear the word', '听这个词'), 'hear-phrase', 'sound')}
+      ${review ? secondary(localize('Show pinyin', '看拼音'), 'show-hint') : ''}</div>
     <p class="phase-copy">${positionHint}</p>
     <div class="tile-row picture-tiles">${run.choices.map((value, i) => {
       const option = value === 'inside' ? insideOption : lesson.phrases.find(({ art }) => art === value);
@@ -624,10 +648,9 @@ function showMatch() {
     localize('Let your child try reading first. They can tap “Hear the word” for help.', '让孩子先自己读卡片。卡住时，可以点「听这个词」。'));
 }
 
-function storyText(lesson) {
-  const familiar = new Set(lessons.slice(0, run.index + 1).flatMap(({ words }) => words.map(({ han }) => han)));
-  return [...lesson.story].map((char) => familiar.has(char)
-    ? `<button class="story-hanzi" data-say="${char}">${char}</button>` : char).join('');
+function storyText() {
+  return storyReadings(run.index).map(token => typeof token === 'string' ? token :
+    `<button class="story-hanzi" data-say="${token.han}" data-py="${token.py}">${token.han}</button>`).join('');
 }
 
 function showStory() {
@@ -635,16 +658,22 @@ function showStory() {
   return chapter(localize('Read the story together', '一起读绘本'), `
     <div class="spread">
       <figure class="storybook-art" ${chapterLandscape(lesson)}>${sprite('car')}<span>${art(lesson.scene, lesson)}</span></figure>
-      <article class="storybook-text" lang="zh-Hans"><h3>${lesson.title}</h3><p>${storyText(lesson)}</p></article>
+      <article class="storybook-text" lang="zh-Hans"><h3>${lesson.title}</h3><p>${storyText()}</p></article>
     </div>
     <div class="panel-actions">${secondary(localize('Read the page aloud', '朗读整页'), 'read-story', 'sound')}${primary(localize('Done reading', '读完了'), 'advance')}</div>`,
-    localize('Pause at each yellow character and let your child read it. Tap a character to hear it.', '大人读故事，读到黄色汉字就停一停，让孩子接着念。点任意黄色汉字可以听它的读音。'));
+    localize('Pause at a highlighted character or word and let your child read it. Tap to hear it aloud.', '读到黄色的字或词时停一停，让孩子接着念。点一下就能听到它在故事里的读音。'));
 }
 
 function showStickers() {
   const lesson = currentLesson();
   const placed = new Set(run.placed);
   const stickerLabel = (kind) => kind === 'cat' ? stickerName(lesson) : localize('Cat car', '猫猫小车');
+  const reward = `<div class="sticker-reward">
+    <div class="sticker-reward-art" aria-hidden="true">${cat(lesson.cat)}</div>
+    <div><h3 id="sticker-reward-title" tabindex="-1">${localize(
+      `You earned the ${stickerName(lesson)} sticker!`, `获得「${stickerName(lesson)}」贴纸！`,
+    )}</h3><p>${localize('Saved in your sticker book.', '已经收进贴纸册啦！')}</p></div>
+  </div>`;
   return chapter(localize(`Place ${stickerName(lesson)} and the cat car`, `贴上${stickerName(lesson)}和它的小车`), `
     <div class="sticker-sheet">
       ${['cat', 'car'].map((item) => `<div class="sticker-space ${placed.has(item) ? 'stuck' : ''}" data-slot="${item}">
@@ -652,13 +681,13 @@ function showStickers() {
         <span>${stickerLabel(item)}</span>
       </div>`).join('')}
     </div>
-    <div class="sticker-tray">
+    ${placed.size === 2 ? `${reward}
+      <div class="panel-actions">${primary(localize('Let’s drive', '开车出发'), 'advance')}</div>` : `<div class="sticker-tray">
       ${['cat', 'car'].filter((item) => !placed.has(item)).map((item) => `<button class="pick-sticker" draggable="true" data-sticker="${item}" aria-label="${localize(`Place ${stickerLabel(item)}`, `贴上${stickerLabel(item)}`)}">
         ${item === 'cat' && run.index ? cat(lesson.cat) : sprite(item)}
       </button>`).join('')}
     </div>
-    <div class="panel-actions">${placed.size === 2 ? primary(localize('Let’s drive', '开车出发'), 'advance') :
-      `<p class="phase-copy">${localize('Tap each sticker or drag it to its outline.', '点贴纸，或者拖到上面的轮廓。')}</p>`}</div>`,
+    <p class="phase-copy">${localize('Tap each sticker or drag it to its outline.', '点贴纸，或者拖到上面的轮廓。')}</p>`}`,
     localize('Place both stickers to take the cat car out and look for road signs.', '让孩子把两张贴纸贴到轮廓上。贴好就可以开着猫猫小车去找路牌。'));
 }
 
@@ -763,7 +792,7 @@ function renderScene(focus = true, { keepAudio = false } = {}) {
 }
 
 function nextItem() {
-  const count = { listen: run.questions.length, build: 3, match: currentLesson().phrases.length }[run.stage];
+  const count = { listen: run.questions.length, build: currentLesson().phrases.length, match: pictureOrder.length }[run.stage];
   if (run.round + 1 === count) {
     return advance();
   }
@@ -782,7 +811,7 @@ function playStageCue() {
     else hearInstructions();
   }
   if (run.stage === 'listen') hearQuestion();
-  if (['build', 'match'].includes(run.stage)) hearPhrase();
+  if (run.stage === 'build' || (run.stage === 'match' && !isPictureReview())) hearPhrase();
   if (run.stage === 'story') readStory();
   if (run.stage === 'stickers') hearInstructions();
   if (run.stage === 'drive' && run.round < 6) {
@@ -861,9 +890,19 @@ function choose(index, button) {
 
 function placeSticker(kind) {
   if (run.stage !== 'stickers' || !['cat', 'car'].includes(kind) || run.placed.includes(kind)) return;
+  const alreadyCollected = hasSticker(run.index);
   run.placed.push(kind);
   checkpoint();
   renderScene(false);
+  if (!alreadyCollected && hasSticker(run.index)) {
+    scene.querySelector('.sticker-reward').classList.add('celebrating');
+    $('sticker-reward-title').focus();
+    if (state.sound) {
+      narration.src = '/audio/sticker-reward.wav';
+      narration.play().catch(() => { /* The reward is shown even when audio cannot play. */ });
+    }
+    return;
+  }
   scene.querySelector('.pick-sticker, [data-action="advance"]')?.focus({ preventScroll: true });
 }
 
@@ -957,6 +996,17 @@ $('stops').addEventListener('click', (event) => {
   const stop = event.target.closest('[data-stop]');
   if (stop) begin(Number(stop.dataset.stop));
 });
+$('course-sections')?.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-course-section]');
+  if (!button) return;
+  const extension = courseSections[Number(button.dataset.courseSection)];
+  if (Boolean(volumes[activeVolume].extension) === extension) return;
+  const current = lessons[nextStop()].volume;
+  activeVolume = Boolean(volumes[current].extension) === extension ? current :
+    volumes.findIndex(volume => Boolean(volume.extension) === extension);
+  renderMap();
+  $(`route-${activeVolume}`).focus({ preventScroll: true });
+});
 $('routes').addEventListener('click', (event) => {
   const target = event.target.closest('[data-route]');
   if (!target) return;
@@ -1034,7 +1084,7 @@ scene.addEventListener('click', (event) => {
   const playsAudio = say || action?.startsWith('hear-') ||
     ['play-film', 'read-story', 'start-drive'].includes(action);
   if (playsAudio && !state.sound) setSound(true);
-  if (say) return hearVocabulary(characterLessons.get(say), say);
+  if (say) return hearVocabulary({ han: say, py: button.dataset.py }, say);
   switch (action) {
     case 'home':
       journey.close();
@@ -1072,7 +1122,7 @@ scene.addEventListener('click', (event) => {
       hearQuestion();
       break;
     case 'show-hint':
-      $('speech-status').textContent = pinyinHint(run.questions[run.round]);
+      speechStatus(pinyinHint(run.stage === 'listen' ? run.questions[run.round] : currentPhrase()));
       break;
     case 'next-item':
       nextItem();
