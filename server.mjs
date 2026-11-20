@@ -13,6 +13,7 @@ const files = new Map([
   ['/app.js', 'text/javascript; charset=utf-8'],
   ['/lessons.js', 'text/javascript; charset=utf-8'],
   ['/expanded-lessons.js', 'text/javascript; charset=utf-8'],
+  ['/more-lessons.js', 'text/javascript; charset=utf-8'],
   ['/stroke-paths.js', 'text/javascript; charset=utf-8'],
   ['/assets/ARPHICPL.TXT', 'text/plain; charset=utf-8'],
   ['/assets/kitten-stickers.png', 'image/png'],

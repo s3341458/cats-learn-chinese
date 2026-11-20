@@ -1,4 +1,5 @@
 import { expandedVolumes } from './expanded-lessons.js';
+import { moreVolumes } from './more-lessons.js';
 
 // Each path follows the writing direction of one stroke on a 240 × 240 grid.
 const strokes = {
@@ -295,7 +296,7 @@ const garden = [
     words: [
       word('花', 'huā', 'flower', 'red-flower',
         ['Point to a flower. Find the grass top of 花, then look at the two parts below it.', '指一指花，再看看「花」上面的草字头。草字头的下面，左右各有一部分。'],
-        ['Look for a grass top and 化 underneath it.', '找上面是草字头，下面是「化」的字。'], ['草', '化', '华']),
+        ['Look for a grass top and 化 underneath it.', '找上面是草字头，下面是「化」的字。'], ['草', '芽', '叶']),
       word('草', 'cǎo', 'grass', 'green-grass',
         ['Point to the grass. Find the grass top of 草, the 日 in the middle, and the 十 below.', '指一指小草。再找「草」上面的草字头，中间的「日」，还有下面的「十」。'],
         ['Look for a grass top with 日 and 十 below it.', '找草字头下面有「日」和「十」的字。'], ['花', '早', '苗']),
@@ -399,6 +400,7 @@ export const volumes = [
   { title: '花园篇', titleEn: 'Garden', image: '/assets/oil-garden.jpg', lessons: garden },
   { title: '市集篇', titleEn: 'Market', image: '/assets/oil-market.jpg', lessons: market },
   ...expandedVolumes,
+  ...moreVolumes.map(volume => ({ ...volume, extension: true })),
 ];
 export const lessons = volumes.flatMap((volume, index) =>
   volume.lessons.map((lesson) => ({ ...lesson, volume: index })));

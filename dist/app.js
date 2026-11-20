@@ -45,6 +45,7 @@ let activeTrack;
 let cleanupTracing;
 let panelReturn;
 const characterCount = new Set(lessons.flatMap(({ words }) => words.map(({ han }) => han))).size;
+const courseSections = [false, true];
 const nextStop = () => Math.min(state.completed.length, lessons.length - 1);
 let activeVolume = lessons[nextStop()].volume;
 
@@ -172,7 +173,14 @@ function renderMap() {
   else if (activeVolume < currentVolume) tip = localize(`This book is finished. Open ${nextVolume} to keep going.`, `这册已读完。翻到「${nextVolume}」继续。`);
   else if (activeVolume > currentVolume) tip = localize(`Finish ${nextVolume} to open this book.`, `先完成「${nextVolume}」，再来这一册。`);
   $('map-tip').textContent = tip;
+  const sections = $('course-sections');
+  if (sections) {
+    sections.innerHTML = volumes.some(route => route.extension) ? courseSections.map((extension, index) =>
+      `<button data-course-section="${index}" aria-pressed="${Boolean(volume.extension) === extension}" aria-controls="routes">${extension
+        ? localize('Next 100 characters', '后 100 字') : localize('First 100 characters', '前 100 字')}</button>`).join('') : '';
+  }
   $('routes').innerHTML = volumes.map((route, index) => {
+    if (sections && Boolean(route.extension) !== Boolean(volume.extension)) return '';
     const done = lessons.slice(0, count).filter((lesson) => lesson.volume === index).length;
     return `<button id="route-${index}" data-route="${index}" aria-pressed="${activeVolume === index}" aria-controls="map-section">
       ${volumeName(route)}<span>${done} / ${route.lessons.length}</span></button>`;
@@ -313,7 +321,9 @@ function shuffle(values) {
 
 const currentLesson = () => lessons[run.index];
 const currentWord = () => currentLesson().words[run.stage === 'first' ? 0 : 1];
-const currentPhrase = () => currentLesson().phrases[run.round];
+const pictureOrder = [0, 1, 2, 3, 2, 0, 3, 1];
+const currentPhrase = () => currentLesson().phrases[run.stage === 'match' ? pictureOrder[run.round] : run.round];
+const isPictureReview = () => run.stage === 'match' && run.round >= currentLesson().phrases.length;
 const chapterLandscape = (lesson) =>
   `style="--book-map:url('${volumes[lesson.volume].image}');--book-position:${lesson.at[0]}% center"`;
 
@@ -346,14 +356,14 @@ function begin(index, resume = true) {
     ? saved.reviewWords.slice(0, 2).map((han) => lessons.slice(0, index).flatMap(({ words }) => words)
       .find((word) => word.han === han)).filter(Boolean)
     : reviewCharacters(index);
-  const questions = [first, first, second, second, ...reviewWords, first, second];
+  const questions = [first, first, second, second, ...reviewWords, first, second, first, second];
   const stage = stages.includes(saved?.stage) ? saved.stage : 'film';
   run = {
     index, stage, questions, reviewWords, visited: stages.indexOf(stage), round: 0,
     lane: 1, starred: [], stationary: matchMedia('(prefers-reduced-motion: reduce)').matches,
   };
   if (saved) {
-    const limit = { listen: questions.length - 1, build: 2, match: 3, drive: 6 }[stage] ?? 0;
+    const limit = { listen: questions.length - 1, build: lesson.phrases.length - 1, match: pictureOrder.length - 1, drive: 6 }[stage] ?? 0;
     run.round = Number.isInteger(saved.round) ? Math.max(0, Math.min(limit, saved.round)) : 0;
     run.wordMode = ['glyph', 'trace'].includes(saved.wordMode) ? saved.wordMode : 'picture';
     run.stroke = Number.isInteger(saved.stroke) ? Math.max(0, saved.stroke) : 0;
@@ -603,7 +613,7 @@ function showBuild() {
   const hearWord = secondary(localize('Hear the word', '听这个词'), 'hear-phrase', 'sound');
   return chapter(ready ? localize('Read the word aloud', '拼好啦，读一读') :
     localize('Listen and tap the characters in order', '听词语，按顺序点字'), `
-    ${rounds(run.round, 3)}
+    ${rounds(run.round, currentLesson().phrases.length)}
     <div class="build-board">
       <div class="art-card" role="img" aria-label="${localize(...item.label)}">${art(item.art, currentLesson())}</div>
       <div class="slots" aria-label="${localize('Word slots', '拼词格')}">${[...item.han].map((_, i) => `<span class="slot ${run.slots?.[i] ? 'filled' : ''}" lang="zh-Hans">${run.slots?.[i] ?? ''}</span>`).join('')}</div>
@@ -619,14 +629,17 @@ function showBuild() {
 function showMatch() {
   const item = currentPhrase();
   const lesson = currentLesson();
+  const review = isPictureReview();
   const positionHint = ['above', 'below'].includes(item.art)
     ? localize('Look at where the ball is in relation to the box.', '看小球在盒子的哪边。')
     : localize('Which picture matches this word?', '哪张图表示这个词？');
-  return chapter(localize('Read the word and pick a picture', '读一读，选图片'), `
-    ${rounds(run.round, lesson.phrases.length)}
+  const title = review ? localize('Read the word again', '再认一次这个词') : localize('Read the word and pick a picture', '读一读，选图片');
+  return chapter(title, `
+    ${rounds(run.round, pictureOrder.length)}
     <div class="read-card" lang="zh-Hans">${item.han}</div>
-    <span class="pinyin" lang="zh-Latn">${item.py}</span>
-    <div class="panel-actions">${secondary(localize('Hear the word', '听这个词'), 'hear-phrase', 'sound')}</div>
+    ${review ? '' : `<span class="pinyin" lang="zh-Latn">${item.py}</span>`}
+    <div class="panel-actions">${secondary(localize('Hear the word', '听这个词'), 'hear-phrase', 'sound')}
+      ${review ? secondary(localize('Show pinyin', '看拼音'), 'show-hint') : ''}</div>
     <p class="phase-copy">${positionHint}</p>
     <div class="tile-row picture-tiles">${run.choices.map((value, i) => {
       const option = value === 'inside' ? insideOption : lesson.phrases.find(({ art }) => art === value);
@@ -781,7 +794,7 @@ function renderScene(focus = true, { keepAudio = false } = {}) {
 }
 
 function nextItem() {
-  const count = { listen: run.questions.length, build: 3, match: currentLesson().phrases.length }[run.stage];
+  const count = { listen: run.questions.length, build: currentLesson().phrases.length, match: pictureOrder.length }[run.stage];
   if (run.round + 1 === count) {
     return advance();
   }
@@ -800,7 +813,7 @@ function playStageCue() {
     else hearInstructions();
   }
   if (run.stage === 'listen') hearQuestion();
-  if (['build', 'match'].includes(run.stage)) hearPhrase();
+  if (run.stage === 'build' || (run.stage === 'match' && !isPictureReview())) hearPhrase();
   if (run.stage === 'story') readStory();
   if (run.stage === 'stickers') hearInstructions();
   if (run.stage === 'drive' && run.round < 6) {
@@ -985,6 +998,17 @@ $('stops').addEventListener('click', (event) => {
   const stop = event.target.closest('[data-stop]');
   if (stop) begin(Number(stop.dataset.stop));
 });
+$('course-sections')?.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-course-section]');
+  if (!button) return;
+  const extension = courseSections[Number(button.dataset.courseSection)];
+  if (Boolean(volumes[activeVolume].extension) === extension) return;
+  const current = lessons[nextStop()].volume;
+  activeVolume = Boolean(volumes[current].extension) === extension ? current :
+    volumes.findIndex(volume => Boolean(volume.extension) === extension);
+  renderMap();
+  $(`route-${activeVolume}`).focus({ preventScroll: true });
+});
 $('routes').addEventListener('click', (event) => {
   const target = event.target.closest('[data-route]');
   if (!target) return;
@@ -1100,7 +1124,7 @@ scene.addEventListener('click', (event) => {
       hearQuestion();
       break;
     case 'show-hint':
-      $('speech-status').textContent = pinyinHint(run.questions[run.round]);
+      speechStatus(pinyinHint(run.stage === 'listen' ? run.questions[run.round] : currentPhrase()));
       break;
     case 'next-item':
       nextItem();

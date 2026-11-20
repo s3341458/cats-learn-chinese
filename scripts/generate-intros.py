@@ -18,6 +18,15 @@ ROOT = Path(__file__).resolve().parents[1]
 RATE = 24_000
 MODEL = "hexgrad/Kokoro-82M-v1.1-zh"
 VOICE = "zf_001"
+# Pin readings for isolated syllables and the tones of easy-to-misread words.
+# https://docs.aws.amazon.com/polly/latest/dg/ph-table-mandarin.html
+POLLY_PINYIN = {
+    "葡": "pu2", "柠": "ning2", "竹": "zhu2", "森": "sen1", "轮": "lun2", "欢": "huan1", "贺": "he4",
+    "龟壳": "gui1-ke2", "扫帚": "sao4-zhou0", "数一数": "shu3-yi0-shu3",
+    "葡萄架": "pu2-tao0-jia4", "葡萄汁": "pu2-tao0-zhi1", "葡萄干": "pu2-tao0-gan1",
+    "竹林": "zhu2-lin2", "松林": "song1-lin2", "校门": "xiao4-men2", "校服": "xiao4-fu2",
+    "泳帽": "yong3-mao4", "泳圈": "yong3-quan1", "圆圈": "yuan2-quan1", "笑脸": "xiao4-lian3",
+}
 
 
 def import_native(directory, word, source):
@@ -90,7 +99,10 @@ def render(pipeline, text, track, speed, pause):
 def render_polly(text, track, speed, pause):
     """Synthesize the whole passage in one request so the voice keeps its phrasing."""
     rate = 16_000
-    ssml = f'<speak><prosody rate="{round(speed * 100)}%">{escape(text)}</prosody></speak>'
+    spoken = escape(text)
+    if pinyin := POLLY_PINYIN.get(text):
+        spoken = f'<phoneme alphabet="x-amazon-pinyin" ph="{pinyin}">{spoken}</phoneme>'
+    ssml = f'<speak><prosody rate="{round(speed * 100)}%">{spoken}</prosody></speak>'
     with tempfile.TemporaryDirectory(prefix="cats-polly-") as directory:
         recording = Path(directory) / "speech.pcm"
         subprocess.run([

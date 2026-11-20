@@ -10,14 +10,19 @@ https://creativecommons.org/licenses/by-sa/3.0/us/
 原始录音与署名 · Original recordings and notice
 https://www.yojik.eu/audiocollections/detailled/cmn-caen-tan/
 
-单字 · Characters
+单字 · Characters (193)
 人 口 大 小 天 太 木 本 上 下 日 月 山 石 水 火 田 土 白 云
 风 雨 花 草 车 马 米 瓜 书 笔 信 包 手 脚 眼 牙 门 窗 床 灯
 鞋 布 脸 头 菜 葱 面 肉 汤 碗 糖 饼 杯 茶 桃 梨 猫 狗 牛 羊
 鸡 蛋 鸟 飞 猪 鹿 熊 象 画 纸 课 文 读 讲 拍 球 跑 跳 台 舞
 河 海 船 桥 树 松 雪 冰 星 夜 工 店 铁 站 医 药 电 钟 琴 鼓
+红 黄 蓝 绿 黑 紫 橙 粉 灰 墨 果 苹 香 蕉 萄 柚 橘 檬 沙 贝
+壳 蟹 虾 浪 岸 岛 帆 礁 叶 枝 根 林 兔 蝶 狐 狸 奶 麦 油 盐
+枣 蜜 蜂 粥 早 餐 洗 刷 扫 擦 桌 椅 柜 盆 伞 盒 篮 足 排 羽
+游 泳 滑 赛 胜 学 校 老 师 同 班 写 字 算 数 晴 阴 雾 霞 雷
+闪 冬 春 夏 秋 节 礼 笑 祝 唱 歌 圆 团
 
-词语 · Words
+词语 · Words (172)
 大人 门口 晴天 本子 上面 下面 月亮 日记 石头 火车 泥土 土豆
 乌云 雨伞 雨衣 风筝 汽车 马车 自行车 车站 大米 玉米 西瓜 黄瓜
 书包 书架 铅笔 毛笔 信封 邮票 明信片 邮包 手套 手表 脚步 袜子
@@ -27,10 +32,23 @@ https://www.yojik.eu/audiocollections/detailled/cmn-caen-tan/
 金鱼 图画 报纸 课本 课文 字典 黑板 读书 讲课 篮球 足球 排球
 跑步 跳远 乒乓球 舞台 跳舞 歌曲 笛子 河流 沙滩 贝壳 帆船 轮船
 桥梁 松树 柳树 竹子 叶子 雪花 冰淇淋 星星 夜晚 早晨 工人 工厂
-商店 书店 铁路 地铁 医生 医院 钟表 电话 电视 钢琴 小提琴
+商店 书店 铁路 地铁 医生 医院 钟表 电话 电视 钢琴 小提琴 面粉
+水果 葡萄 橘子 柠檬 沙子 海岸 对岸 珊瑚 森林 蝴蝶 狐狸 尾巴
+小麦 青菜 蜂蜜 蜜蜂 刷子 椅子 排队 羽毛 羽毛球 游泳 比赛 学校
+学生 老师 老人 厨师 同学 相同 汉字 算术 算盘 数字 阴天 雷雨
+闪电 手电筒 冬天 春天 夏天 秋天 秋收 节日 礼物 欢迎 欢呼 微笑
+祝贺 祝福 合唱 团圆
 
-原始无损录音经音量调整并转成 MP3。每个文件保留完整读音和原语速。
-「石」采用同音字「十」的单字录音，两者在这里都读 shí。
-Each complete FLAC recording was level-adjusted and encoded as MP3 at its
-original speed. 石 uses the isolated syllable shí recorded for 十. The MP3
-metadata includes the original FLAC filename.
+原始录音只调整音量并转成 MP3，保留完整读音和原语速。
+以下单字采用同音同调的完整真人单字录音（课程用字 → 原录音用字）。
+Each complete FLAC recording was level-adjusted and encoded as MP3 at its original speed.
+The characters below use complete recordings made for an identical spoken syllable and tone.
+“石” → “十” (shí) · “橙” → “成” (chéng) · “果” → “裹” (guǒ) · “苹” → “平” (píng)
+“蕉” → “交” (jiāo) · “萄” → “桃” (táo) · “柚” → “又” (yòu) · “橘” → “局” (jú)
+“檬” → “蒙” (méng) · “贝” → “倍” (bèi) · “蟹” → “卸” (xiè) · “礁” → “交” (jiāo)
+“叶” → “页” (yè) · “林” → “邻” (lín) · “兔” → “吐” (tù) · “蝶” → “叠” (dié)
+“狐” → “胡” (hú) · “狸” → “梨” (lí) · “麦” → “卖” (mài) · “桌” → “捉” (zhuō)
+“椅” → “以” (yǐ) · “柜” → “贵” (guì) · “篮” → “蓝” (lán) · “羽” → “雨” (yǔ)
+“泳” → “涌” (yǒng) · “校” → “笑” (xiào) · “歌” → “割” (gē)
+
+The MP3 metadata includes the original FLAC filename.

@@ -1,15 +1,15 @@
 import { strokePaths } from './stroke-paths.js';
 
-function character(han, py, meaning, art, near, english, chinese) {
+export function character(han, py, meaning, art, near, english, chinese) {
   const hint = [english, chinese];
   return { han, py, meaning, art, near: [...near], action: hint, hint, strokes: strokePaths[han] };
 }
 
-function card(han, py, art, english, chinese, avoid) {
+export function card(han, py, art, english, chinese, avoid) {
   return { han, py, art, label: [english, chinese], avoid };
 }
 
-function stop(cat, name, nameEn, sticker, stickerEn, title, words, cards, intro, story) {
+export function stop(cat, name, nameEn, sticker, stickerEn, title, words, cards, intro, story) {
   const phrases = cards.map(({ avoid, ...picture }, index) => ({
     ...picture,
     extra: [...words.map(({ han }) => han), '日', '木', '田'].find(han => !picture.han.includes(han)),
@@ -19,7 +19,7 @@ function stop(cat, name, nameEn, sticker, stickerEn, title, words, cards, intro,
   return { cat, name, nameEn, sticker, stickerEn, title, words, phrases, intro, story, scene: words[0].art };
 }
 
-function book(id, title, titleEn, stops) {
+export function book(id, title, titleEn, stops) {
   const positions = stops.length === 6 ? [10, 26, 43, 59, 76, 90] : [12, 31, 50, 69, 88];
   return {
     title, titleEn, image: '/assets/oil-' + id + '.jpg',
@@ -133,7 +133,7 @@ export const expandedVolumes = [
     '盘子里有烧饼和饼干。小猫把蛋糕切成两块，把糖果放在盘子旁。朋友来了，两只小猫一边吃点心，一边说今天做了什么。'),
     stop('tea-cup', '倒杯茶', 'Tea Table', '薄荷叶猫', 'Mint Leaf', '等茶凉一点', [
       character('杯', 'bēi', 'cup', '🥛', '木不坏', 'Find the wood component and 不.', '找左边的木字旁和右边的「不」。'),
-      character('茶', 'chá', 'tea', '🍵', '荼余芽', 'Look for the grass top and the two small strokes near the base.', '找上面的草字头，再找下面分开的两小笔。'),
+      character('茶', 'chá', 'tea', '🍵', '苔余芽', 'Look for the grass top and the two small strokes near the base.', '找上面的草字头，再找下面分开的两小笔。'),
     ], [
       card('杯子', 'bēi zi', '🥛', 'A clear drinking glass', '一个透明的饮水杯'),
       card('茶叶', 'chá yè', '🍃', 'A small handful of loose leaves', '一小把散开的叶子'),
@@ -142,7 +142,7 @@ export const expandedVolumes = [
     ], '桌上摆着茶具。小猫把杯子放稳，等大人来倒茶。',
     '大人把茶叶放进茶壶，加水泡茶。热热的红茶倒进杯子。小猫等茶凉一点，把杯子慢慢推到朋友面前。'),
     stop('peach-pear', '水果拼盘', 'Fruit Plate', '梨花猫', 'Pear Blossom', '四种水果摆一摆', [
-      character('桃', 'táo', 'peach', '🍑', '木逃挑', 'Find the wood component on the left and 兆 on the right.', '找左边的木字旁，再看看右边的「兆」。'),
+      character('桃', 'táo', 'peach', '🍑', '木跳树', 'Find the wood component on the left and 兆 on the right.', '找左边的木字旁，再看看右边的「兆」。'),
       character('梨', 'lí', 'pear', '🍐', '利木李', 'Find 木 under 利.', '找下面的「木」，再看上面的「利」。'),
     ], [
       card('桃子', 'táo zi', '🍑', 'A rosy peach with a crease', '一颗红粉色、中间有一条浅沟的桃'),
@@ -267,7 +267,7 @@ export const expandedVolumes = [
     '跑步要看前面，跳远要等起跳线前没有人。小猫把跳绳递给等在旁边的朋友。玩了一会儿，它们还打了几下乒乓球。'),
     stop('stage-dance', '学校小舞台', 'School Stage', '铃兰猫', 'Bluebell', '跟着音乐转个圈', [
       character('台', 'tái', 'stage / platform', 'stage', '去吉合', 'Find the small box at the bottom and the bent stroke above it.', '找下面的「口」，再看上面的撇折。'),
-      character('舞', 'wǔ', 'to dance', '💃', '无午开', 'Look for the long horizontal under the upright strokes.', '找中间几竖下面长长的一横。'),
+      character('舞', 'wǔ', 'to dance', '💃', '无牛开', 'Look for the long horizontal under the upright strokes.', '找中间几竖下面长长的一横。'),
     ], [
       card('舞台', 'wǔ tái', 'stage', 'A low stage framed by red curtains', '红色帘子之间的小舞台'),
       card('跳舞', 'tiào wǔ', '💃', 'A dancer moving with one arm raised', '一位抬着手跳舞的人'),
@@ -341,7 +341,7 @@ export const expandedVolumes = [
     '工人把书从工厂送来。他把车停在街角的商店旁，再把几箱书抬进书店。小猫等他搬完箱子，才走过去看书架上的新书。'),
     stop('rail-station', '站台等车', 'Railway Station', '银铃猫', 'Silver Bell', '车快到站了', [
       character('铁', 'tiě', 'iron / railway', '🛤️', '失钱铜', 'Find the metal component beside 失.', '找金字旁和右边的「失」。'),
-      character('站', 'zhàn', 'station / stand', '🚉', '立店占', 'Find 立 on the left and 占 on the right.', '找左边的「立」和右边的「占」。'),
+      character('站', 'zhàn', 'station / stand', '🚉', '立店点', 'Find 立 on the left and 占 on the right.', '找左边的「立」和右边的「占」。'),
     ], [
       card('铁路', 'tiě lù', '🛤️', 'Two parallel rails with sleepers and no train', '两根平行铁轨和一排枕木，画面里没有车'),
       card('地铁', 'dì tiě', '🚇', 'A subway train at a dark tunnel entrance', '停在地下隧道口的列车'),
@@ -361,7 +361,7 @@ export const expandedVolumes = [
     '医院外停着一辆救护车。医生问小猫哪里不舒服，又告诉爸爸该怎么照顾它。爸爸把药片放到小猫够不到的地方，等到了规定的时间再陪它吃药。'),
     stop('electric-clock', '钟表铺', 'Clock Shop', '滴答猫', 'Tick Tock', '指针走到哪儿了', [
       character('电', 'diàn', 'electricity', '🔌', '田申由', 'Find the last stroke that bends out under the box.', '找最后从方框下面弯出去的一笔。'),
-      character('钟', 'zhōng', 'clock', '🕰️', '中铁针', 'Find the metal component next to 中.', '找金字旁和右边的「中」。'),
+      character('钟', 'zhōng', 'clock', '🕰️', '冲铁针', 'Find the metal component next to 中.', '找金字旁和右边的「中」。'),
     ], [
       card('钟表', 'zhōng biǎo', '🕰️', 'A tabletop clock with hands and a round face', '一面有圆形钟面和指针的座钟'),
       card('电话', 'diàn huà', '☎️', 'A desk phone with a handset', '一部有听筒的座机电话'),

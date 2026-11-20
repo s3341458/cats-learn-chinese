@@ -1,6 +1,6 @@
 # 猫猫学中文 · Cats Learn Chinese
 
-和猫猫逛十册绘本的五十个站点，学一百个汉字。每站从猫猫的小故事开始，依次点图认字、按笔顺描红、听音选字、拼词跟读、看字选图和亲子共读。首次贴好猫猫和小车时，猫咪贴纸会立即收进贴纸册，并出现奖励动画，开启声音时还会播放一小段音乐。接着开车选路牌，抵达终点盖章。
+和猫猫逛二十册绘本的一百个站点，学二百个汉字。每站从猫猫的小故事开始，依次点图认字、按笔顺描红、听音选字、拼词跟读、看字选图和亲子共读。首次贴好猫猫和小车时，猫咪贴纸会立即收进贴纸册，并出现奖励动画，开启声音时还会播放一小段音乐。接着开车选路牌，抵达终点盖章。
 
 小镇篇之后接郊游篇，经过石头山、溪边窑房和稻田小屋，认识「山石、水火、田土」。原有站点的编号和本地进度继续有效。
 
@@ -10,9 +10,11 @@
 
 市集篇后接居家、餐桌、动物、学校、山海和街道六册，共三十四站。从「手、脚」学到「琴、鼓」，每站再用词语和故事带回前几册的字，例如「石桥」「月亮」「课本」。
 
+后 100 字接在街道篇之后，从调色、果园、海岸和林间，一路学到早餐、整理、运动、同学、四季和庆典。原有 50 站沿用原编号，读完街道篇就能从第 51 站「红黄调色盘」开始。
+
 非教学界面默认显示英文。绘本封面和地图都可以切换简体中文，课程内容和发音使用普通话。游戏不限时，完成一站就会开放下一站。家长角可查看认读记录和复习日期。贴纸、进度及界面语言保存在当前浏览器。
 
-从第二站开始，听音题会复习上一站的一个字，再从学过的字中挑一个，优先选到期或久未复习的字。同一天连续玩也会穿插复习。退出再回来时会接着做同一组题。
+每站两个新字各听认四次，四个词都拼一遍、看字选图两遍。第二轮选图默认收起拼音和读音，需要时可以点开。第二站起，听音题还会穿插上一站的一个字和另一个已学字，优先选到期或久未复习的字。退出再回来时会接着做同一组题。
 
 ## 本地运行
 
@@ -26,7 +28,7 @@ npm run dev
 
 `npm run check` 检查 JavaScript 语法、课程完整性和复习进度。前十六站在 `dist/lessons.js`，后续关卡在 `dist/expanded-lessons.js`，它们的描红路径在 `dist/stroke-paths.js`。听音题也可打开拼音提示。
 
-全部 100 个单字和 119 个词语采用 Yue Tan 的普通话真人录音。其余练习词使用完整合成的普通话录音，根据转写和发音复核选用 Zhiyu 或 Tingting。开场、整页故事和题目说明用 Zhiyu 按整段合成，保留标点停顿。学习单字或词语时以课程自带的录音为准，加载失败会显示带声调的拼音。快速连点同一段录音时，当前一遍会继续播完。可在家长角查看[录音署名与许可](dist/audio/credits.txt)。
+单字和练习词优先采用 Yue Tan 的普通话真人录音，保留完整读音与原语速。其余字词使用整段普通话配音。开场、整页故事和题目说明用 Zhiyu 按整段配音，保留句子和标点停顿。学习单字或词语时以课程自带的录音为准，加载失败会显示带声调的拼音。快速连点同一段录音时，当前一遍会继续播完。可在家长角查看[录音署名与许可](dist/audio/credits.txt)。
 
 修改故事或题目说明后，使用已有 Polly 权限的 AWS CLI 重新生成下面的录音。生成器会跳过已有真人示范。
 
@@ -53,11 +55,11 @@ python scripts/check-audio.py --lesson 17 --transcribe
 
 猫咪和小车插画由内置 ImageGen 生成，保存在 `dist/assets/kitten-stickers.png`。提示词为绘本水粉与彩铅风格、两张分离的透明贴纸，内容是戴薄荷绿领巾的橘猫和它开的薄荷绿玩具车，只画猫，不加文字或品牌。
 
-十册地图和章节背景共用 `dist/assets/oil-*.jpg`。内置 ImageGen 以小镇篇为画风参考，沿用各册原地图的地标和小路布局，绘制成 1140 × 460 的横幅油画。提示词指定细亚麻画布、可见的柔和笔触、薄厚相间的不透明油彩、暖金色晨光和低饱和的橄榄绿、赭黄与天蓝。地图上的站点仍由游戏绘制。
+地图和章节背景共用 `dist/assets/oil-*.jpg`。内置 ImageGen 以小镇篇为画风参考，沿用原有地图的地标和小路布局，绘制成 1140 × 460 的横幅油画。后 100 字各册沿用相应主题的插画背景，地图上的站点由游戏绘制。
 
 选图题的插画用内置 ImageGen 制作，放在 `dist/assets/cards-town.jpg` 和 `dist/assets/cards-outdoors.jpg`。提示词要求同尺寸的水粉和彩铅绘本图、每格只画题目需要的一个对象或场景、不加文字。每道题的两个干扰选项在 `dist/lessons.js` 中单独列出，避免一张图也能解释成另一个答案。
 
-市集图卡 `dist/assets/cards-market.jpg` 和后六册的补充图卡 `dist/assets/home-detail.jpg`、`dist/assets/story-detail.jpg` 每张四列三行，每格画一个物件、场景或动作。邮局图卡 `dist/assets/cards-post.jpg` 按两列两行排列信封、邮票、明信片和邮包。郊游篇的溪水题继续使用 `dist/assets/countryside.jpg` 中的溪流画面。
+市集图卡 `dist/assets/cards-market.jpg` 和补充图卡 `dist/assets/home-detail.jpg`、`dist/assets/story-detail.jpg` 每张四列三行，每格画一个物件、场景或动作。邮局图卡 `dist/assets/cards-post.jpg` 按两列两行排列信封、邮票、明信片和邮包。郊游篇的溪水题继续使用 `dist/assets/countryside.jpg` 中的溪流画面。
 
 ## 部署与许可证
 
@@ -73,4 +75,4 @@ bash scripts/deploy-cloudfront.sh cats-learn-chinese.theyucheng.com <hosted-zone
 
 脚本会在 `us-east-1` 创建或更新站点，上传静态文件，并刷新 CloudFront 缓存。首次部署需要等待 ACM 验证域名和 CloudFront 生效。学习进度和贴纸保存在使用者的浏览器里，每个网址各自保存。
 
-项目代码采用 [MIT 许可证](LICENSE)。真人录音采用 [CC BY-SA 3.0 US](https://creativecommons.org/licenses/by-sa/3.0/us/)。后六册的描红路径取自 Hanzi Writer Data 2.0.1 所分发的 Make Me a Hanzi 笔顺数据，已对中线坐标缩放，按 [Arphic Public License](dist/assets/ARPHICPL.TXT) 分发。
+项目代码采用 [MIT 许可证](LICENSE)。真人录音采用 [CC BY-SA 3.0 US](https://creativecommons.org/licenses/by-sa/3.0/us/)。第 5 至第 20 册的描红路径取自 Hanzi Writer Data 2.0.1 所分发的 Make Me a Hanzi 笔顺数据，已对中线坐标缩放，按 [Arphic Public License](dist/assets/ARPHICPL.TXT) 分发。
