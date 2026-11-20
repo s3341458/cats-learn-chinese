@@ -24,7 +24,7 @@ Resources:
             Condition:
               StringEquals:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
-                token.actions.githubusercontent.com:sub: repo:s3341458/cats-learn-chinese:ref:refs/heads/main
+                token.actions.githubusercontent.com:sub: repo:s3341458@2015244/cats-learn-chinese@1459326781:ref:refs/heads/main
       Policies:
         - PolicyName: PublishSite
           PolicyDocument:
