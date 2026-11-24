@@ -145,7 +145,7 @@ export const missions = {
   // 庆典篇
   'festival-gift': sort('Set up the celebration table. Keep the gifts and party hats together and display the festival and bamboo pictures separately.', '布置庆典桌。礼物和礼帽摆在桌上，节日和竹节的图贴在展板上。', [['On the party table', '庆典桌上的东西'], ['On the display board', '展板上的图画']], [2, 3]),
   'joy-smile': memory('Restore the captions on the welcome party photos.', '迎新会拍了四张照片。给每张照片找回它的图签。'),
-  greetings: cloze('Help the kitten finish what to write and say when delivering a card and flowers.', '小猫要送卡片和鲜花。帮它把庆典上的话补完整。', ['把想说的话写在＿里，再送给朋友。', '你赢了比赛，大家都来＿你。', '这句话是我送给你的新年＿。', '把几枝花扎在一起，就是一束＿。']),
+  greetings: cloze('Help the kitten finish what to write and say when delivering a card and flowers.', '小猫要送卡片和鲜花。帮它把庆典上的话补完整。', ['把想说的话写在＿里，再送给朋友。', '你赢了比赛，大家都来＿你。', '这句话是我送给你的新年＿。', '几枝花扎在一起送人，这叫＿。']),
   'sing-song': order('Get the group performance ready. Find the sheet music, pick the song, then sing alone and join the chorus.', '一起准备节目。先找歌谱、选歌曲，再轮流唱，最后合唱。', [3, 2, 0, 1]),
   'circle-reunion': cloze('Fill in the last page of the reunion scrapbook.', '最后一页是团圆剪贴簿。读完句子，贴上剩下的四个词。', ['猫猫手拉手，围成了一个＿。', '饭菜摆在没有桌角的＿上。', '把米饭捏成一个小球，就是＿。', '一家人从各地回来相聚，这就叫＿。']),
 };
