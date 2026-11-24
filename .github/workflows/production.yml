@@ -68,7 +68,7 @@ jobs:
         run: |
           curl --fail --silent --show-error --retry 3 --max-time 20 "$SITE_URL/" -o "$RUNNER_TEMP/cats-live"
           cmp dist/index.html "$RUNNER_TEMP/cats-live"
-          for asset in app.js lessons.js audio/credits.txt; do
+          for asset in app.js lessons.js mission-game.js missions.js missions.css audio/credits.txt; do
             curl --fail --silent --show-error --retry 3 --max-time 20 "$SITE_URL/$asset" -o "$RUNNER_TEMP/cats-live"
             cmp "dist/$asset" "$RUNNER_TEMP/cats-live"
           done

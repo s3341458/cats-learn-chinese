@@ -1,6 +1,8 @@
 import { activityPrompts, introTrack, lessons, storyReadings, storyTrack, traceGuide, volumes, wordTrack } from './lessons.js';
 import { availability, dayAfter, recordAnswer, reviewCharacters, save, state } from './progress.js';
 import { setupTracing } from './tracing.js';
+import { createMission, missionFinished, missionLabels, missionSnapshot, missionTarget, playMission, renderMission } from './mission-game.js';
+import { missions } from './missions.js';
 
 const $ = (id) => document.getElementById(id);
 const panel = $('panel');
@@ -19,7 +21,7 @@ const stages = ['film', 'first', 'second', 'listen', 'build', 'match', 'story', 
 const stageNames = [
   ['Story intro', '故事开场'], ['First character', '第一个字'], ['Second character', '第二个字'],
   ['Listen and find', '听音找字'], ['Build a word', '拼词跟读'], ['Match the picture', '看字选图'],
-  ['Read the story', '猫猫绘本'], ['Place stickers', '贴贴纸'], ['Find road signs', '开车认字'],
+  ['Read the story', '猫猫绘本'], ['Place stickers', '贴贴纸'],
 ];
 const localize = (english, chinese) => state.language === 'zh-Hans' ? chinese : english;
 const lessonName = (lesson) => localize(lesson.nameEn, lesson.name);
@@ -320,11 +322,15 @@ function shuffle(values) {
 
 const currentLesson = () => lessons[run.index];
 const currentWord = () => currentLesson().words[run.stage === 'first' ? 0 : 1];
-const pictureOrder = [0, 1, 2, 3, 2, 0, 3, 1];
-const currentPhrase = () => currentLesson().phrases[run.stage === 'match' ? pictureOrder[run.round] : run.round];
+const firstPictures = [0, 1, 2, 3];
+const reviewPictures = [0, 1, 2, 3, 2, 0, 3, 1];
+const pictureOrder = () => run.legacyPictureReview ? reviewPictures : firstPictures;
+const currentPhrase = () => currentLesson().phrases[run.stage === 'match' ? pictureOrder()[run.round] : run.round];
 const isPictureReview = () => run.stage === 'match' && run.round >= currentLesson().phrases.length;
 const chapterLandscape = (lesson) =>
   `style="--book-map:url('${volumes[lesson.volume].image}');--book-position:${lesson.at[0]}% center"`;
+const missionLabel = (lesson) => localize(...(run.legacyDrive
+  ? ['Find road signs', '开车认字'] : missionLabels[missions[lesson.cat].mode]));
 
 function initializeRound() {
   if (run.choices) return;
@@ -338,7 +344,7 @@ function initializeRound() {
   } else if (run.stage === 'match') {
     const item = currentPhrase();
     run.choices = shuffle([item.art, ...item.alternatives]);
-  } else if (run.stage === 'drive' && run.round < 6) {
+  } else if (run.stage === 'drive' && run.legacyDrive && run.round < 6) {
     const item = roadQuestions()[run.round];
     run.choices = shuffle([item.han, ...item.alternatives]);
   }
@@ -360,9 +366,12 @@ function begin(index, resume = true) {
   run = {
     index, stage, questions, reviewWords, visited: stages.indexOf(stage), round: 0,
     lane: 1, starred: [], stationary: matchMedia('(prefers-reduced-motion: reduce)').matches,
+    legacyDrive: saved?.legacyDrive === true || (stage === 'drive' && !saved?.mission),
+    legacyPictureReview: saved?.legacyPictureReview === true || (stage === 'match' && saved.round >= firstPictures.length),
   };
+  if (saved?.mission) run.mission = createMission(lesson, saved.mission, shuffle);
   if (saved) {
-    const limit = { listen: questions.length - 1, build: lesson.phrases.length - 1, match: pictureOrder.length - 1, drive: 6 }[stage] ?? 0;
+    const limit = { listen: questions.length - 1, build: lesson.phrases.length - 1, match: pictureOrder().length - 1, drive: 6 }[stage] ?? 0;
     run.round = Number.isInteger(saved.round) ? Math.max(0, Math.min(limit, saved.round)) : 0;
     run.wordMode = ['glyph', 'trace'].includes(saved.wordMode) ? saved.wordMode : 'picture';
     run.stroke = Number.isInteger(saved.stroke) ? Math.max(0, saved.stroke) : 0;
@@ -383,6 +392,9 @@ function checkpoint() {
     index: run.index, stage: run.stage, round: run.round, wordMode: run.wordMode,
     stroke: run.stroke, placed: run.placed, starred: run.starred,
     reviewWords: run.reviewWords.map(({ han }) => han),
+    legacyDrive: run.legacyDrive || undefined,
+    legacyPictureReview: run.legacyPictureReview || undefined,
+    mission: run.mission ? missionSnapshot(run.mission) : undefined,
   };
   save();
 }
@@ -399,6 +411,7 @@ function resetRound() {
 function go(stage) {
   resetRound();
   Object.assign(run, { stage, round: 0, wordMode: 'picture', stroke: 0 });
+  if (stage === 'drive' && !run.legacyDrive) run.mission ??= createMission(currentLesson(), null, shuffle);
   run.visited = Math.max(run.visited, stages.indexOf(stage));
   checkpoint();
   renderScene();
@@ -421,11 +434,13 @@ function chapter(title, content, tip) {
   return `<div class="chapter">
     <header class="chapter-nav">
       <button class="icon-button" data-action="home" aria-label="${localize('Back to the map', '返回地图')}">${icon('home')}</button>
-      <div class="chapter-track" aria-label="${localize('Lesson steps', '关卡步骤')}">${stages.map((step, i) =>
-        `<button data-stage="${step}" class="${i < index ? 'past' : ''}" aria-label="${localize(...stageNames[i])}"
-          title="${localize(...stageNames[i])}" ${i > run.visited ? 'disabled' : ''} ${i === index ? 'aria-current="step"' : ''}>
+      <div class="chapter-track" aria-label="${localize('Lesson steps', '关卡步骤')}">${stages.map((step, i) => {
+        const label = step === 'drive' ? missionLabel(lesson) : localize(...stageNames[i]);
+        return `<button data-stage="${step}" class="${i < index ? 'past' : ''}" aria-label="${label}"
+          title="${label}" ${i > run.visited ? 'disabled' : ''} ${i === index ? 'aria-current="step"' : ''}>
           ${i === index ? cat(lesson.cat, 'track-cat') : i === stages.length - 1 ? '★' : '<i></i>'}
-        </button>`).join('')}</div>
+        </button>`;
+      }).join('')}</div>
       <button class="icon-button" data-action="toggle-sound" aria-label="${localize('Sound', '发音')}" aria-pressed="${state.sound}">${icon(state.sound ? 'sound' : 'muted')}</button>
     </header>
     <div class="chapter-heading"><p>${stopName(run.index)} · ${lessonName(lesson)}</p><h2 id="scene-title" tabindex="-1">${title}</h2></div>
@@ -433,7 +448,7 @@ function chapter(title, content, tip) {
       ${activityPrompt() ? `<div class="prompt-controls">${secondary(localize('Hear instructions', '听题目说明'), 'hear-instructions', 'sound')}</div>` : ''}
       ${content}${statusLine}
     </div>
-    <aside class="coach">${run.index === 0 ? sprite('cat') : cat(lesson.cat)}<div><b>${localize('Tip for grown-ups', '给大人的小提示')}</b><p>${tip}</p></div></aside>
+    ${tip ? `<aside class="coach">${run.index === 0 ? sprite('cat') : cat(lesson.cat)}<div><b>${localize('Tip for grown-ups', '给大人的小提示')}</b><p>${tip}</p></div></aside>` : ''}
   </div>`;
 }
 
@@ -528,7 +543,7 @@ function playTraceGuide() {
 
 function activityPrompt() {
   if (['first', 'second'].includes(run.stage)) return activityPrompts[run.wordMode];
-  if (run.stage === 'drive' && run.round === 6) return null;
+  if (run.stage === 'drive' && (!run.legacyDrive || run.round === 6)) return null;
   return activityPrompts[run.stage];
 }
 
@@ -634,7 +649,7 @@ function showMatch() {
     : localize('Which picture matches this word?', '哪张图表示这个词？');
   const title = review ? localize('Read the word again', '再认一次这个词') : localize('Read the word and pick a picture', '读一读，选图片');
   return chapter(title, `
-    ${rounds(run.round, pictureOrder.length)}
+    ${rounds(run.round, pictureOrder().length)}
     <div class="read-card" lang="zh-Hans">${item.han}</div>
     ${review ? '' : `<span class="pinyin" lang="zh-Latn">${item.py}</span>`}
     <div class="panel-actions">${secondary(localize('Hear the word', '听这个词'), 'hear-phrase', 'sound')}
@@ -682,13 +697,13 @@ function showStickers() {
       </div>`).join('')}
     </div>
     ${placed.size === 2 ? `${reward}
-      <div class="panel-actions">${primary(localize('Let’s drive', '开车出发'), 'advance')}</div>` : `<div class="sticker-tray">
+      <div class="panel-actions">${primary(missionLabel(lesson), 'advance')}</div>` : `<div class="sticker-tray">
       ${['cat', 'car'].filter((item) => !placed.has(item)).map((item) => `<button class="pick-sticker" draggable="true" data-sticker="${item}" aria-label="${localize(`Place ${stickerLabel(item)}`, `贴上${stickerLabel(item)}`)}">
         ${item === 'cat' && run.index ? cat(lesson.cat) : sprite(item)}
       </button>`).join('')}
     </div>
     <p class="phase-copy">${localize('Tap each sticker or drag it to its outline.', '点贴纸，或者拖到上面的轮廓。')}</p>`}`,
-    localize('Place both stickers to take the cat car out and look for road signs.', '让孩子把两张贴纸贴到轮廓上。贴好就可以开着猫猫小车去找路牌。'));
+    localize('Place both stickers, then help the cat with this stop’s mission.', '贴好两张贴纸，就可以帮小猫完成这一站的小任务。'));
 }
 
 function roadQuestions() {
@@ -727,6 +742,16 @@ function showDrive() {
     localize('Take your time. Picking the right sign on the first try earns a star.', '慢慢听，再选路牌。一次选对就能拿到星星。'));
 }
 
+function showMission() {
+  if (run.legacyDrive) return showDrive();
+  const lesson = currentLesson();
+  const { title, content, tip } = renderMission(run.mission, {
+    t: localize, art: value => art(value, lesson), cat: cat(lesson.cat), landscape: chapterLandscape(lesson),
+    icon, primary, secondary,
+  });
+  return chapter(title, content, tip);
+}
+
 function showFinish() {
   const last = run.index === lessons.length - 1;
   const lesson = currentLesson();
@@ -759,7 +784,7 @@ function showFinish() {
 const renderers = {
   film: showFilm, first: showWord, second: showWord, listen: showListening,
   build: showBuild, match: showMatch, story: showStory, stickers: showStickers,
-  drive: showDrive, finish: showFinish,
+  drive: showMission, finish: showFinish,
 };
 
 function renderScene(focus = true, { keepAudio = false } = {}) {
@@ -792,7 +817,7 @@ function renderScene(focus = true, { keepAudio = false } = {}) {
 }
 
 function nextItem() {
-  const count = { listen: run.questions.length, build: currentLesson().phrases.length, match: pictureOrder.length }[run.stage];
+  const count = { listen: run.questions.length, build: currentLesson().phrases.length, match: pictureOrder().length }[run.stage];
   if (run.round + 1 === count) {
     return advance();
   }
@@ -814,7 +839,10 @@ function playStageCue() {
   if (run.stage === 'build' || (run.stage === 'match' && !isPictureReview())) hearPhrase();
   if (run.stage === 'story') readStory();
   if (run.stage === 'stickers') hearInstructions();
-  if (run.stage === 'drive' && run.round < 6) {
+  if (run.stage === 'drive' && !run.legacyDrive && run.mission.mode === 'trail' && !missionFinished(run.mission)) {
+    hearMissionWord(missionTarget(run.mission));
+  }
+  if (run.stage === 'drive' && run.legacyDrive && run.round < 6) {
     if (run.driving && !run.hit) hearRoad();
     else hearInstructions();
   }
@@ -912,6 +940,40 @@ function hearRoad() {
   if (!item) return;
   const label = localize('Hear the sign again', '再听路牌');
   hearVocabulary(item, label);
+}
+
+function hearMissionWord(index) {
+  const item = run.mission?.items[index];
+  if (item) hearVocabulary(item, localize('Hear the clue', '听线索'));
+}
+
+function chooseMission(button) {
+  if (run.stage !== 'drive' || run.legacyDrive) return;
+  const { mission: action, missionIndex } = button.dataset;
+  if (action === 'hear') {
+    if (!state.sound) setSound(true);
+    return hearMissionWord(Number(missionIndex));
+  }
+
+  const game = run.mission;
+  const { answer, firstTry } = playMission(game, action, Number(missionIndex));
+  if (answer) recordAnswer(answer.han, firstTry);
+  checkpoint();
+  renderScene(false, { keepAudio: !answer });
+
+  const sameControl = `[data-mission="${action}"]${missionIndex === undefined ? '' : `[data-mission-index="${missionIndex}"]`}:enabled`;
+  const nextControl = missionFinished(game) ? '[data-action="complete"]'
+    : game.mode === 'memory' && game.flipped.length === 2 ? '[data-mission="reset"]'
+    : game.mode === 'sort' && game.selected !== null && action === 'pick' ? '[data-mission="bin"]:enabled'
+    : game.mode === 'pattern' && action === 'preview' && !game.preview ? '[data-mission="pick"]:enabled'
+    : sameControl;
+  const next = scene.querySelector(nextControl) ?? scene.querySelector('[data-mission="pick"]:enabled') ?? $('mission-status');
+  next.focus({ preventScroll: true });
+
+  if (answer && state.sound) {
+    if (game.mode === 'trail' && !missionFinished(game)) hearMissionWord(missionTarget(game));
+    else hearVocabulary(answer, localize('Hear the word', '听词语'));
+  }
 }
 
 function readStory() {
@@ -1077,6 +1139,7 @@ scene.addEventListener('click', (event) => {
   const button = event.target.closest('button');
   if (!button || !run) return;
   const { action, pick, stage, say, sticker, lane } = button.dataset;
+  if (button.dataset.mission) return chooseMission(button);
   if (pick !== undefined) return choose(Number(pick), button);
   if (sticker) return placeSticker(sticker);
   if (lane !== undefined) return chooseLane(Number(lane));
@@ -1144,6 +1207,11 @@ scene.addEventListener('click', (event) => {
     case 'hear-road':
       hearRoad();
       break;
+    case 'hear-mission-line': {
+      const line = run.mission.lines[missionTarget(run.mission)];
+      speak(line.replace('＿', '……'));
+      break;
+    }
     case 'drive-mode': {
       run.stationary = !run.stationary;
       $('road').classList.toggle('moving', run.driving && !run.stationary && !run.hit);
