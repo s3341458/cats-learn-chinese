@@ -25,10 +25,15 @@ button:focus-visible{outline:3px solid #824a7d;outline-offset:4px}
 h1{font-family:var(--serif);font-size:clamp(39px,5.4vw,66px);line-height:1.13;margin:0;color:var(--ink);font-weight:900;letter-spacing:.015em}
 h1 em{color:var(--clay);font-style:normal}
 .subtitle{font-size:15px;letter-spacing:.04em;color:var(--muted);margin:12px 0 0}
-.progress-card{width:236px;flex:none;border:1px solid #eadcc7;border-radius:15px;background:#fffaf0;padding:13px 15px 15px;box-shadow:0 2px 0 #efe3ce;margin-bottom:2px}
+.progress-card{position:relative;width:236px;flex:none;border:1px solid #eadcc7;border-radius:15px;background:#fffaf0;padding:13px 15px 15px;box-shadow:0 2px 0 #efe3ce;margin-bottom:2px}
+.progress-card:hover{background:#fcf0d8;border-color:#d8b89a}
 .progress-heading{display:flex;align-items:center;gap:7px;font-size:13px;margin-bottom:10px}
 .progress-heading .icon{color:#a65b48}
-.progress-heading span{margin-left:auto;color:#795a52;font-size:12px;white-space:nowrap}
+.progress-open{display:flex;align-items:center;gap:7px;border:0;background:none;padding:0;font-weight:750;text-align:left}
+.progress-open::after{content:"";position:absolute;inset:0;border-radius:inherit;cursor:pointer}
+.progress-card:focus-within{outline:3px solid #824a7d;outline-offset:4px}
+.progress-open:focus-visible{outline:0}
+#progress-count{margin-left:auto;color:#795a52;font-size:12px;white-space:nowrap}
 .progress-track{height:8px;border-radius:8px;background:#eee3d3;overflow:hidden}
 #progress-fill{height:100%;width:0;background:#cd785b;border-radius:inherit;transition:width .35s ease}
 .character-progress{margin:5px 0 0;color:var(--muted);font-size:12px}

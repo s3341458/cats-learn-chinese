@@ -1,5 +1,5 @@
 import { activityPrompts, introTrack, lessons, storyReadings, storyTrack, traceGuide, volumes, wordTrack } from './lessons.js';
-import { availability, dayAfter, recordAnswer, reviewCharacters, save, state } from './progress.js';
+import { availability, dayAfter, recordAnswer, reviewCharacters, save, state, testQuestions, testReviewItems } from './progress.js';
 import { setupTracing } from './tracing.js';
 import { createMission, missionFinished, missionLabels, missionSnapshot, missionTarget, playMission, renderMission } from './mission-game.js';
 import { missions } from './missions.js';
@@ -35,6 +35,7 @@ const chromeLabels = [...document.querySelectorAll('[data-zh-label]')].map((elem
   [element, element.getAttribute('aria-label'), element.dataset.zhLabel]);
 const languageControls = document.querySelectorAll('.language-select');
 let run;
+let test;
 let timer;
 let noticeTimer;
 let parentTimer;
@@ -218,6 +219,79 @@ function showPanel(title, content, returnId) {
   if (opening) panel.showModal();
   $('panel-title').focus({ preventScroll: true });
   panel.scrollTop = 0;
+}
+
+function testSummary(result) {
+  const correct = result.total - result.missed.length;
+  return `<p class="test-score">${localize(`${correct} / ${result.total} correct`, `答对 ${correct} / ${result.total} 题`)}</p>
+    ${result.missed.length ? `<p class="reward-copy">${localize('Characters and words to practise', '可以再练练的字词')}</p>
+      <ul class="test-missed">${testReviewItems(result).map(({ han, py }) =>
+        `<li><b lang="zh-Hans">${han}</b><span class="pinyin" lang="zh-Latn">${py}</span></li>`).join('')}</ul>` : ''}`;
+}
+
+function showProgress() {
+  const completed = state.completed.length;
+  showPanel(localize('My progress', '我的探索进度'), `
+    <p class="reward-copy">${localize(`${completed} of ${lessons.length} stops completed`, `已完成 ${completed} / ${lessons.length} 站`)}</p>
+    ${state.latestTest ? `<h3>${localize('Latest test', '最近一次测试')}</h3>${testSummary(state.latestTest)}` : ''}
+    <p class="reward-copy">${completed ? localize('Try up to 10 listening and picture questions from the stops you’ve finished.', '从完成过的站点选出最多 10 道题，听音选字、读词选图。')
+      : localize('Finish the first stop to unlock your test.', '完成第一站，就可以来测试啦。')}</p>
+    <div class="panel-actions">${completed ? primary(localize('Start test', '开始测试'), 'start-test') : ''}</div>`, 'progress');
+}
+
+function startTest() {
+  const questions = testQuestions(shuffle);
+  if (!questions.length) return;
+  test = { questions, index: 0, selected: null, missed: [] };
+  showTestQuestion();
+}
+
+const testListenLabel = () => localize('Hear the character', '听这个字');
+
+function showTestQuestion() {
+  const { questions, index } = test;
+  const { answer, choices, lesson } = questions[index];
+  const last = index === questions.length - 1;
+  const instruction = lesson ? localize('Read the word and pick a picture.', '读一读，选图片。')
+    : localize('Listen and pick the character you hear.', '听一听，选出你听到的字。');
+  showPanel(localize(`Question ${index + 1} of ${questions.length}`, `第 ${index + 1} / ${questions.length} 题`), `
+    <div class="test-question">
+      <p class="phase-copy">${instruction}</p>
+      ${lesson ? `<div class="read-card" lang="zh-Hans">${answer.han}</div>`
+        : secondary(testListenLabel(), 'hear-test', 'sound')}
+      <div class="tile-row ${lesson ? 'picture-tiles' : 'small-tiles'}" role="group" aria-label="${localize('Answer choices', '答题选项')}">
+        ${choices.map((item, i) => `<button class="tile" data-test-choice="${i}" aria-pressed="false"
+          ${lesson ? `aria-label="${localize(...item.label)}">${art(item.art, lesson)}` : `lang="zh-Hans">${item.han}`}</button>`).join('')}
+      </div>
+      ${statusLine}
+      <button class="primary" data-action="submit-test" disabled>
+        ${last ? localize('See results', '查看结果') : localize('Next question', '下一题')} ${icon('arrow')}
+      </button>
+    </div>`);
+  if (!lesson && state.sound) hearVocabulary(answer, testListenLabel());
+}
+
+function selectTestChoice(button) {
+  test.selected = Number(button.dataset.testChoice);
+  panel.querySelector('[data-test-choice][aria-pressed="true"]')?.setAttribute('aria-pressed', 'false');
+  button.setAttribute('aria-pressed', 'true');
+  panel.querySelector('[data-action="submit-test"]').disabled = false;
+}
+
+function submitTestAnswer() {
+  if (test.selected === null) return;
+  const { answer, choices } = test.questions[test.index];
+  if (choices[test.selected] !== answer) test.missed.push(answer.han);
+  stopSpeech();
+  test.index++;
+  test.selected = null;
+  if (test.index < test.questions.length) return showTestQuestion();
+
+  state.latestTest = { total: test.questions.length, missed: test.missed };
+  test = null;
+  save();
+  showPanel(localize('Test results', '测试结果'), `${testSummary(state.latestTest)}
+    <div class="panel-actions">${secondary(localize('Back to progress', '返回进度'), 'show-progress')}</div>`);
 }
 
 function showAlbum() {
@@ -1081,6 +1155,7 @@ $('sound').addEventListener('click', () => {
   notify(state.sound ? localize('Sound is on.', '发音已开启。') : localize('Sound is off.', '发音已关闭。'));
 });
 $('album').addEventListener('click', showAlbum);
+$('progress').addEventListener('click', showProgress);
 const guide = $('guide');
 guide.addEventListener('pointerdown', (event) => {
   if (event.button !== 0) return;
@@ -1099,13 +1174,37 @@ guide.addEventListener('click', (event) => {
   else if (!parentHeld) notify(localize('Press and hold “Grown-ups” to open.', '请按住「家长角」打开。'));
 });
 panel.addEventListener('close', () => {
-  if (!journey.open && !panel.open) $(panelReturn)?.focus({ preventScroll: true });
+  if (panel.open) return;
+  if (test) {
+    stopSpeech();
+    test = null;
+  }
+  if (!journey.open) $(panelReturn)?.focus({ preventScroll: true });
 });
 panel.addEventListener('click', (event) => {
   const button = event.target.closest('button');
   if (!button) return;
-  if (button.dataset.action === 'close-panel') panel.close();
-  if (button.dataset.replay !== undefined) begin(Number(button.dataset.replay), false);
+  const { action, replay, testChoice } = button.dataset;
+  if (replay !== undefined) return begin(Number(replay), false);
+  if (testChoice !== undefined) return selectTestChoice(button);
+  switch (action) {
+    case 'close-panel':
+      panel.close();
+      break;
+    case 'show-progress':
+      showProgress();
+      break;
+    case 'start-test':
+      startTest();
+      break;
+    case 'hear-test':
+      if (!state.sound) setSound(true);
+      hearVocabulary(test.questions[test.index].answer, testListenLabel());
+      break;
+    case 'submit-test':
+      submitTestAnswer();
+      break;
+  }
 });
 
 journey.addEventListener('close', () => {

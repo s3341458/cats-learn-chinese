@@ -2,9 +2,20 @@ import { lessons } from './lessons.js';
 
 const key = 'meow-word-town-v2';
 const intervals = [1, 2, 4, 7, 14];
-const knownItems = new Set(lessons.flatMap(({ words, phrases }) =>
-  [...words, ...phrases].map(({ han }) => han)));
+const maxTestQuestions = 10;
+const knownItems = new Map(lessons.flatMap(({ words, phrases }) =>
+  [...words, ...phrases].map((item) => [item.han, item])));
 const validDate = (value) => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
+
+function readTest(result, completedCount) {
+  if (!completedCount || !Number.isInteger(result?.total) || result.total < 1 || result.total > maxTestQuestions ||
+      !Array.isArray(result.missed) || result.missed.length > result.total) return null;
+  const learned = new Set(lessons.slice(0, completedCount).flatMap(({ words, phrases }) =>
+    [...words, ...phrases].map(({ han }) => han)));
+  if (new Set(result.missed).size !== result.missed.length ||
+      !result.missed.every((han) => learned.has(han))) return null;
+  return { total: result.total, missed: result.missed };
+}
 
 export function dayAfter(offset = 0) {
   const date = new Date();
@@ -25,7 +36,7 @@ function read() {
     completed.push(saved.completed[i]);
   }
   const review = Object.create(null);
-  for (const han of knownItems) {
+  for (const han of knownItems.keys()) {
     const item = saved?.review?.[han];
     if (!item || !Number.isInteger(item.box) || item.box < 1 || item.box > 5 ||
         !validDate(item.last) || !validDate(item.due)) continue;
@@ -43,6 +54,7 @@ function read() {
     completed,
     review,
     resume: resume?.index === completed.length ? resume : null,
+    latestTest: readTest(saved?.latestTest, completed.length),
   };
 }
 
@@ -69,6 +81,33 @@ export function reviewCharacters(index) {
   const older = earlier.filter((word) => word !== recent)
     .sort((a, b) => due(b) - due(a) || reviewedAt(a) - reviewedAt(b))[0];
   return [recent, older];
+}
+
+export function testQuestions(shuffle) {
+  const completed = lessons.slice(0, state.completed.length);
+  const words = completed.flatMap((lesson) => lesson.words);
+  const listening = shuffle(words).slice(0, maxTestQuestions / 2).map((answer) => {
+    // A character with the same reading would also be right in an audio question.
+    const others = words.filter((word) => word.py !== answer.py);
+    const similar = others.filter((word) => answer.near.includes(word.han));
+    const rest = others.filter((word) => !answer.near.includes(word.han));
+    const choices = [...shuffle(similar), ...shuffle(rest)].slice(0, 3);
+    return { answer, choices: shuffle([answer, ...choices]) };
+  });
+  const phrases = new Map();
+  for (const lesson of completed) {
+    for (const answer of lesson.phrases) phrases.set(answer.han, { answer, lesson });
+  }
+  const pictures = shuffle([...phrases.values()]).slice(0, maxTestQuestions - listening.length)
+    .map(({ answer, lesson }) => {
+      const others = lesson.phrases.filter((item) => answer.alternatives.includes(item.art));
+      return { answer, lesson, choices: shuffle([answer, ...others]) };
+    });
+  return shuffle([...listening, ...pictures]);
+}
+
+export function testReviewItems(result) {
+  return result.missed.map((han) => knownItems.get(han));
 }
 
 export function recordAnswer(han, firstTry, reviewStop) {

@@ -305,6 +305,16 @@
   aspect-ratio: 1;
   overflow: hidden;
 }
+.test-question { display: grid; justify-items: center; gap: 15px; }
+.test-question > p { margin: 0; }
+.test-question .speech-status:empty { display: none; }
+.test-question .tile[aria-pressed=true] { background: #e4edce; border-color: #63734a; box-shadow: 0 4px 0 #a9b98c; }
+.test-question .primary:disabled { background: #eee3d3; border-color: #dfc9b1; color: var(--muted); box-shadow: none; cursor: default; }
+.test-score { margin: 8px 0 0; font-size: clamp(24px, 6vw, 36px); font-weight: 850; }
+.test-missed { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; list-style: none; padding: 0; margin: 0 0 18px; }
+.test-missed li { min-width: 64px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--white); }
+.test-missed b { display: block; font-size: 20px; }
+.test-missed .pinyin { font-size: 13px; }
 .atlas-picture {
   display: block;
   width: 91%;
